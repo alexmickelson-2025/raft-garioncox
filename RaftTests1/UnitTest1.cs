@@ -14,22 +14,6 @@ public class RaftTests1
     }
 
     [Fact]
-    // Test Case 11
-    public void SingleNode_WhenItBecomesCandidate_ShouldVoteForItself()
-    {
-        Node n = new(0);
-
-        Assert.Equal(0, n.Term);
-        Assert.False(n.HasVoted);
-
-        n.SetCandidate();
-
-        Assert.Equal(1, n.Term);
-        Assert.Equal(n, n.Vote);
-        Assert.True(n.HasVoted);
-    }
-
-    [Fact]
     // Test Case 8
     public void SingleNode_WhenItBecomesCandidate_ShouldBecomeLeader()
     {
@@ -69,6 +53,22 @@ public class RaftTests1
 
         Assert.Equal(candidate, follower.Vote);
         Assert.True(follower.HasVoted);
+    }
+
+    [Fact]
+    // Test Case 11
+    public void SingleNode_WhenItBecomesCandidate_ShouldVoteForItself()
+    {
+        Node n = new(0);
+
+        Assert.Equal(0, n.Term);
+        Assert.False(n.HasVoted);
+
+        n.SetCandidate();
+
+        Assert.Equal(1, n.Term);
+        Assert.Equal(n, n.Vote);
+        Assert.True(n.HasVoted);
     }
 
     [Fact]
