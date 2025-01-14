@@ -17,11 +17,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="Xunit" />
+    <ProjectReference Include="..\raft-garioncox\raft-garioncox.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\raft-garioncox.csproj" />
+    <Using Include="Xunit" />
   </ItemGroup>
 
 </Project>
