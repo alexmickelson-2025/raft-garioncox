@@ -6,6 +6,26 @@ namespace RaftTests1;
 public class RaftTests1
 {
     [Fact]
+    // Test Case 1
+    public void WhenLeaderActive_SendsHeartbeatWithin50ms()
+    {
+        // ARRANGE
+        Node leader = new(0) { State = NODE_STATE.LEADER };
+        var follower = Substitute.For<INode>();
+        leader.Neighbors = [follower];
+
+        // ACT
+        Thread t = new(() => leader.Run());
+        t.Start();
+
+        Thread.Sleep(50);
+        t.Interrupt();
+
+        // ASSERT
+        follower.Received().Heartbeat(Arg.Any<INode>());
+    }
+
+    [Fact]
     // Test Case 3
     public void SingleNode_WhenInitialized_ShouldBeInFollowerState()
     {

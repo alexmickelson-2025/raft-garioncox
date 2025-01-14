@@ -1,6 +1,4 @@
-﻿using System.Data;
-
-namespace raft_garioncox;
+﻿namespace raft_garioncox;
 
 public class Node(int id) : INode
 {
@@ -54,5 +52,18 @@ public class Node(int id) : INode
         }
 
         return false;
+    }
+
+    public void Heartbeat(INode n)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Run()
+    {
+        foreach (INode n in Neighbors)
+        {
+            n.Heartbeat(this);
+        }
     }
 }
