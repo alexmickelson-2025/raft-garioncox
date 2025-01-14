@@ -1,4 +1,4 @@
 public interface INode
 {
-    public bool RequestVote(INode n);
+    public bool RequestToVoteFor(INode n);
 }

@@ -25,7 +25,7 @@ public class RaftTests1
         n.SetCandidate();
 
         Assert.Equal(1, n.Term);
-        Assert.Equal(n.Id, n.Vote);
+        Assert.Equal(n, n.Vote);
         Assert.True(n.HasVoted);
     }
 
@@ -47,15 +47,42 @@ public class RaftTests1
         var n3 = Substitute.For<INode>();
         n1.Neighbors = [n2, n3];
 
-        n2.RequestVote(Arg.Is<INode>(x => x == n1)).Returns(true);
-        n3.RequestVote(Arg.Is<INode>(x => x == n1)).Returns(true);
+        n2.RequestToVoteFor(Arg.Is<INode>(x => x == n1)).Returns(true);
+        n3.RequestToVoteFor(Arg.Is<INode>(x => x == n1)).Returns(true);
 
 
         n1.SetCandidate();
 
-        n2.Received().RequestVote(Arg.Is<INode>(x => x == n1));
-        n3.Received().RequestVote(Arg.Is<INode>(x => x == n1));
+        n2.Received().RequestToVoteFor(Arg.Is<INode>(x => x == n1));
+        n3.Received().RequestToVoteFor(Arg.Is<INode>(x => x == n1));
         Assert.Equal(NODE_STATE.LEADER, n1.State);
     }
 
+    [Fact]
+    public void NodeVotesForCandidate_WhenVoteRequested()
+    {
+        Node follower = new(0);
+        Node candidate = new(1);
+        follower.Neighbors = [candidate];
+
+        follower.RequestToVoteFor(candidate);
+
+        Assert.Equal(candidate, follower.Vote);
+        Assert.True(follower.HasVoted);
+    }
+
+    // [Fact]
+    // Test Case 12
+    // public void WhenCandidateReceivesMessageFromLaterTerm_BecomesFollower()
+    // {
+    //     Node n1 = new(0);
+    //     Node n2 = new(1);
+    //     n1.Term = 0;
+    //     n2.Term = 1;
+    //     n1.SetCandidate();
+
+    //     // n2.AppendEntries();
+
+    //     Assert.Equal(NODE_STATE.FOLLOWER, n1.State);
+    // }
 }

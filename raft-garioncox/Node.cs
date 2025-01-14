@@ -7,15 +7,15 @@ public class Node(int id) : INode
     public NODE_STATE State { get; private set; } = NODE_STATE.FOLLOWER;
     public bool HasVoted { get; private set; } = false;
     public int Id { get; } = id;
-    public int Term { get; private set; } = 0;
-    public int? Vote { get; private set; } = null;
+    public int Term { get; set; } = 0;
+    public INode? Vote { get; private set; } = null;
     public INode[] Neighbors { get; set; } = [];
 
     public void SetCandidate()
     {
         State = NODE_STATE.CANDIDATE;
         Term += 1;
-        Vote = Id;
+        Vote = this;
         HasVoted = true;
 
         GetVotes();
@@ -27,7 +27,7 @@ public class Node(int id) : INode
         int required = (int)Math.Ceiling((double)Neighbors.Length / 2);
         foreach (INode node in Neighbors)
         {
-            tally += node.RequestVote(this) ? 1 : 0;
+            tally += node.RequestToVoteFor(this) ? 1 : 0;
         }
 
         if (tally >= required)
@@ -36,8 +36,12 @@ public class Node(int id) : INode
         }
     }
 
-    public bool RequestVote(INode n)
+    public bool RequestToVoteFor(INode n)
     {
-        throw new NotImplementedException();
+        if (HasVoted) { return false; }
+
+        HasVoted = true;
+        Vote = n;
+        return true;
     }
 }
