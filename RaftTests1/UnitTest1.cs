@@ -100,4 +100,18 @@ public class RaftTests1
 
         Assert.Equal(NODE_STATE.FOLLOWER, n1.State);
     }
+
+    [Fact]
+    // Test Case 14
+    public void IfNodeReceivesSecondVoteRequest_ShouldRespondNo()
+    {
+        Node n1 = new(0);
+        Node n2 = new(1);
+        n1.Term = 0;
+        n1.RequestToVoteFor(n2);
+
+        bool actual = n1.RequestToVoteFor(n2);
+
+        Assert.False(actual);
+    }
 }
