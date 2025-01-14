@@ -38,7 +38,7 @@ public class Node(int id) : INode
 
     public bool RequestToVoteFor(INode n)
     {
-        if (HasVoted) { return false; }
+        if (HasVoted && n.Term <= Term) { return false; }
 
         HasVoted = true;
         Vote = n;

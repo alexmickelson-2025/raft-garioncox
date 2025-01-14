@@ -114,4 +114,19 @@ public class RaftTests1
 
         Assert.False(actual);
     }
+
+    [Fact]
+    // Test Case 15
+    public void IfNodeReceivesSecondVoteRequestForFutureTurm_ShouldRespondYes()
+    {
+        Node n1 = new(0);
+        Node n2 = new(1);
+        n1.Term = 0;
+        n1.RequestToVoteFor(n2);
+
+        n2.Term = 1;
+        bool actual = n1.RequestToVoteFor(n2);
+
+        Assert.True(actual);
+    }
 }
