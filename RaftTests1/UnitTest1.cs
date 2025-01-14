@@ -86,4 +86,18 @@ public class RaftTests1
         Assert.Equal(NODE_STATE.FOLLOWER, n1.State);
     }
 
+    [Fact]
+    // Test Case 13
+    public void WhenCandidateReceivesMessageFromEqualTerm_BecomesFollower()
+    {
+        Node n1 = new(0);
+        Node n2 = new(1);
+        n1.Term = 0;
+        n2.Term = 0;
+        n1.State = NODE_STATE.CANDIDATE;
+
+        n1.AppendEntries(n2);
+
+        Assert.Equal(NODE_STATE.FOLLOWER, n1.State);
+    }
 }

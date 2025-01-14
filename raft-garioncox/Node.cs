@@ -47,7 +47,7 @@ public class Node(int id) : INode
 
     public void AppendEntries(Node n)
     {
-        if (n.Term > Term)
+        if (n.Term >= Term)
         {
             State = NODE_STATE.FOLLOWER;
         }
