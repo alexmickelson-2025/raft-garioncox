@@ -6,7 +6,7 @@ namespace RaftTests1;
 public class RaftTests1
 {
     [Fact]
-    // Test Case 1
+    // Testing 1
     public void WhenLeaderActive_SendsHeartbeatWithin50ms()
     {
         // ARRANGE
@@ -26,7 +26,7 @@ public class RaftTests1
     }
 
     [Fact]
-    // Test Case 3
+    // Testing 3
     public void SingleNode_WhenInitialized_ShouldBeInFollowerState()
     {
         Node n = new(0);
@@ -34,7 +34,7 @@ public class RaftTests1
     }
 
     [Fact]
-    // Test Case 8
+    // Testing 8
     public void SingleNode_WhenItBecomesCandidate_ShouldBecomeLeader()
     {
         Node n = new(0);
@@ -43,7 +43,7 @@ public class RaftTests1
     }
 
     [Fact]
-    // Test Case 8
+    // Testing 8
     public void Cluster_WhenOneBecomesCandidate_ShouldBecomeLeader()
     {
         Node n1 = new(0);
@@ -75,7 +75,7 @@ public class RaftTests1
     }
 
     [Fact]
-    // Test Case 11
+    // Testing 11
     public void SingleNode_WhenItBecomesCandidate_ShouldVoteForItself()
     {
         Node n = new(0);
@@ -91,7 +91,7 @@ public class RaftTests1
     }
 
     [Fact]
-    // Test Case 12
+    // Testing 12
     public void WhenCandidateReceivesMessageFromLaterTerm_BecomesFollower()
     {
         Node n1 = new(0);
@@ -106,7 +106,7 @@ public class RaftTests1
     }
 
     [Fact]
-    // Test Case 13
+    // Testing 13
     public void WhenCandidateReceivesMessageFromEqualTerm_BecomesFollower()
     {
         Node n1 = new(0);
@@ -121,7 +121,7 @@ public class RaftTests1
     }
 
     [Fact]
-    // Test Case 14
+    // Testing 14
     public void IfNodeReceivesSecondVoteRequest_ShouldRespondNo()
     {
         Node n1 = new(0);
@@ -135,7 +135,7 @@ public class RaftTests1
     }
 
     [Fact]
-    // Test Case 15
+    // Testing 15
     public void IfNodeReceivesSecondVoteRequestForFutureTurm_ShouldRespondYes()
     {
         Node n1 = new(0);
@@ -150,7 +150,7 @@ public class RaftTests1
     }
 
     [Fact]
-    // Test Case 17
+    // Testing 17
     public void WhenFollowerReceivesAppendEntriesRequest_ItSendsResponse()
     {
         Node n1 = new(0);
@@ -162,7 +162,7 @@ public class RaftTests1
     }
 
     [Fact]
-    // Test Case 18
+    // Testing 18
     public void WhenFollowerReceivesAppendEntriesRequest_WithPreviousTerm_ItRejects()
     {
         Node n1 = new(0);
