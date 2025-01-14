@@ -141,4 +141,18 @@ public class RaftTests1
 
         Assert.True(response);
     }
+
+    [Fact]
+    // Test Case 18
+    public void WhenFollowerReceivesAppendEntriesRequest_WithPreviousTerm_ItRejects()
+    {
+        Node n1 = new(0);
+        INode n2 = Substitute.For<INode>();
+        n1.Term = 1;
+        n2.Term = 0;
+
+        bool response = n1.AppendEntries(n2);
+
+        Assert.False(response);
+    }
 }

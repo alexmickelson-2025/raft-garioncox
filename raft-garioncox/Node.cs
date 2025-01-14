@@ -50,8 +50,9 @@ public class Node(int id) : INode
         if (n.Term >= Term)
         {
             State = NODE_STATE.FOLLOWER;
+            return true;
         }
 
-        return true;
+        return false;
     }
 }
