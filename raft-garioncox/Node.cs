@@ -45,11 +45,13 @@ public class Node(int id) : INode
         return true;
     }
 
-    public void AppendEntries(Node n)
+    public bool AppendEntries(INode n)
     {
         if (n.Term >= Term)
         {
             State = NODE_STATE.FOLLOWER;
         }
+
+        return true;
     }
 }

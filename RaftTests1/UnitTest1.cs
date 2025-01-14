@@ -129,4 +129,16 @@ public class RaftTests1
 
         Assert.True(actual);
     }
+
+    [Fact]
+    // Test Case 17
+    public void WhenFollowerReceivesAppendEntriesRequest_ItSendsResponse()
+    {
+        Node n1 = new(0);
+        INode n2 = Substitute.For<INode>();
+
+        bool response = n1.AppendEntries(n2);
+
+        Assert.True(response);
+    }
 }
