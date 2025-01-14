@@ -54,7 +54,6 @@ public class RaftTests1
         n2.RequestToVoteFor(Arg.Is<INode>(x => x == n1)).Returns(true);
         n3.RequestToVoteFor(Arg.Is<INode>(x => x == n1)).Returns(true);
 
-
         n1.SetCandidate();
 
         n2.Received().RequestToVoteFor(Arg.Is<INode>(x => x == n1));
