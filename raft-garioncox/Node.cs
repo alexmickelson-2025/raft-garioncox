@@ -4,7 +4,7 @@ namespace raft_garioncox;
 
 public class Node(int id) : INode
 {
-    public NODE_STATE State { get; private set; } = NODE_STATE.FOLLOWER;
+    public NODE_STATE State { get; set; } = NODE_STATE.FOLLOWER;
     public bool HasVoted { get; private set; } = false;
     public int Id { get; } = id;
     public int Term { get; set; } = 0;
@@ -43,5 +43,13 @@ public class Node(int id) : INode
         HasVoted = true;
         Vote = n;
         return true;
+    }
+
+    public void AppendEntries(Node n)
+    {
+        if (n.Term > Term)
+        {
+            State = NODE_STATE.FOLLOWER;
+        }
     }
 }

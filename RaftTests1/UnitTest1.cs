@@ -71,18 +71,19 @@ public class RaftTests1
         Assert.True(follower.HasVoted);
     }
 
-    // [Fact]
+    [Fact]
     // Test Case 12
-    // public void WhenCandidateReceivesMessageFromLaterTerm_BecomesFollower()
-    // {
-    //     Node n1 = new(0);
-    //     Node n2 = new(1);
-    //     n1.Term = 0;
-    //     n2.Term = 1;
-    //     n1.SetCandidate();
+    public void WhenCandidateReceivesMessageFromLaterTerm_BecomesFollower()
+    {
+        Node n1 = new(0);
+        Node n2 = new(1);
+        n1.Term = 0;
+        n2.Term = 1;
+        n1.State = NODE_STATE.CANDIDATE;
 
-    //     // n2.AppendEntries();
+        n1.AppendEntries(n2);
 
-    //     Assert.Equal(NODE_STATE.FOLLOWER, n1.State);
-    // }
+        Assert.Equal(NODE_STATE.FOLLOWER, n1.State);
+    }
+
 }
