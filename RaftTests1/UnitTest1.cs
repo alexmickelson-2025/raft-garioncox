@@ -47,10 +47,15 @@ public class RaftTests1
         var n3 = Substitute.For<INode>();
         n1.Neighbors = [n2, n3];
 
+        n2.RequestVote(Arg.Is<INode>(x => x == n1)).Returns(true);
+        n3.RequestVote(Arg.Is<INode>(x => x == n1)).Returns(true);
+
+
         n1.SetCandidate();
 
-        n2.Received().RequestVote(Arg.Any<INode>());
-        n3.Received().RequestVote(Arg.Any<INode>());
+        n2.Received().RequestVote(Arg.Is<INode>(x => x == n1));
+        n3.Received().RequestVote(Arg.Is<INode>(x => x == n1));
         Assert.Equal(NODE_STATE.LEADER, n1.State);
     }
+
 }

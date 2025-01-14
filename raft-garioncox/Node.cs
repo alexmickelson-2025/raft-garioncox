@@ -18,15 +18,25 @@ public class Node(int id) : INode
         Vote = Id;
         HasVoted = true;
 
-        foreach (INode node in Neighbors)
-        {
-            node.RequestVote(this);
-        }
-
-        State = NODE_STATE.LEADER;
+        GetVotes();
     }
 
-    public void RequestVote(INode n)
+    private void GetVotes()
+    {
+        int tally = 1;
+        int required = (int)Math.Ceiling((double)Neighbors.Length / 2);
+        foreach (INode node in Neighbors)
+        {
+            tally += node.RequestVote(this) ? 1 : 0;
+        }
+
+        if (tally >= required)
+        {
+            State = NODE_STATE.LEADER;
+        }
+    }
+
+    public bool RequestVote(INode n)
     {
         throw new NotImplementedException();
     }
