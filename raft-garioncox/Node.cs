@@ -8,6 +8,7 @@ public class Node(int id) : INode
     public int Term { get; set; } = 0;
     public INode? Vote { get; set; } = null;
     public INode[] Neighbors { get; set; } = [];
+    public bool Running = true;
 
     public void SetCandidate()
     {
@@ -58,12 +59,28 @@ public class Node(int id) : INode
     {
         throw new NotImplementedException();
     }
-
     public void Run()
     {
-        foreach (INode n in Neighbors)
+        while (Running)
         {
-            n.Heartbeat(this);
+            foreach (INode n in Neighbors)
+            {
+                n.Heartbeat(this);
+            }
+
+            try
+            {
+                Thread.Sleep(50);
+            }
+            catch (ThreadInterruptedException)
+            {
+                break;
+            }
         }
+    }
+
+    public void Stop()
+    {
+        Running = false;
     }
 }

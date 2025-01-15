@@ -18,11 +18,32 @@ public class RaftTests1
         Thread t = new(() => leader.Run());
         t.Start();
 
-        Thread.Sleep(50);
-        t.Interrupt();
+        Thread.Sleep(100);
+        leader.Stop();
+        t.Join();
 
         // ASSERT
         follower.Received().Heartbeat(Arg.Any<INode>());
+    }
+
+    [Fact]
+    public void WhenLeaderActive_SendsHeartBeatEvery50ms()
+    {
+        // ARRANGE
+        Node leader = new(0) { State = NODE_STATE.LEADER };
+        var follower = Substitute.For<INode>();
+        leader.Neighbors = [follower];
+
+        // ACT
+        Thread t = new(() => leader.Run());
+        t.Start();
+
+        Thread.Sleep(100);
+        leader.Stop();
+        t.Join();
+
+        // ASSERT
+        follower.Received(2).Heartbeat(Arg.Any<INode>());
     }
 
     [Fact]
