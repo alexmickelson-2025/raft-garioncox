@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.12.35527.113 d17.12
+VisualStudioVersion = 17.12.35527.113
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "raft-garioncox", "raft-garioncox\raft-garioncox.csproj", "{CDC7FCD9-9F28-4F07-AAB4-8A41C0CB3E05}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaftTests1", "RaftTests1\RaftTests1.csproj", "{C113D1F0-65DE-4906-8BEB-0F8A096ED4EC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSimulation", "WebSimulation\WebSimulation.csproj", "{7C09A8FD-22BA-4DCB-B7F0-F47298ED4DA6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,14 @@ Global
 		{C113D1F0-65DE-4906-8BEB-0F8A096ED4EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C113D1F0-65DE-4906-8BEB-0F8A096ED4EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C113D1F0-65DE-4906-8BEB-0F8A096ED4EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2EC95371-E3AB-45FC-B873-AE4C4DC20044}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2EC95371-E3AB-45FC-B873-AE4C4DC20044}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2EC95371-E3AB-45FC-B873-AE4C4DC20044}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2EC95371-E3AB-45FC-B873-AE4C4DC20044}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C09A8FD-22BA-4DCB-B7F0-F47298ED4DA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C09A8FD-22BA-4DCB-B7F0-F47298ED4DA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C09A8FD-22BA-4DCB-B7F0-F47298ED4DA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C09A8FD-22BA-4DCB-B7F0-F47298ED4DA6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -3,10 +3,10 @@
 public class Node(int id) : INode
 {
     public NODE_STATE State { get; set; } = NODE_STATE.FOLLOWER;
-    public bool HasVoted { get; private set; } = false;
+    public bool HasVoted { get; set; } = false;
     public int Id { get; } = id;
     public int Term { get; set; } = 0;
-    public INode? Vote { get; private set; } = null;
+    public INode? Vote { get; set; } = null;
     public INode[] Neighbors { get; set; } = [];
 
     public void SetCandidate()
