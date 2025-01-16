@@ -9,9 +9,10 @@ public class Node(int id) : INode
     public INode? Vote { get; set; } = null;
     public INode[] Neighbors { get; set; } = [];
     public INode? CurrentLeader { get; set; } = null;
+    public volatile int ElectionTimeout = 300; // in ms
     public bool Running = true;
 
-    public void SetCandidate()
+    public void BecomeCandidate()
     {
         State = NODE_STATE.CANDIDATE;
         Term += 1;
@@ -24,7 +25,7 @@ public class Node(int id) : INode
     private void GetVotes()
     {
         int tally = 1;
-        int required = (int)Math.Ceiling((double)Neighbors.Length / 2);
+        int required = (int)Math.Ceiling((Neighbors.Length + 1.0) / 2);
         foreach (INode node in Neighbors)
         {
             tally += node.RequestToVoteFor(this) ? 1 : 0;
@@ -66,18 +67,40 @@ public class Node(int id) : INode
     {
         while (Running)
         {
-            foreach (INode n in Neighbors)
+            if (State == NODE_STATE.LEADER)
             {
-                n.Heartbeat(this);
+                foreach (INode n in Neighbors)
+                {
+                    n.Heartbeat(this);
+                }
+
+                try
+                {
+                    Thread.Sleep(50);
+                }
+                catch (ThreadInterruptedException)
+                {
+                    break;
+                }
             }
 
-            try
+            if (State == NODE_STATE.FOLLOWER)
             {
-                Thread.Sleep(50);
-            }
-            catch (ThreadInterruptedException)
-            {
-                break;
+                ElectionTimeout -= 10;
+
+                if (ElectionTimeout <= 0)
+                {
+                    BecomeCandidate();
+                }
+
+                try
+                {
+                    Thread.Sleep(10);
+                }
+                catch (ThreadInterruptedException)
+                {
+                    break;
+                }
             }
         }
     }

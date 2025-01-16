@@ -68,11 +68,34 @@ public class RaftTests1
     }
 
     [Fact]
+    // Testing 4
+    public void WhenFollowerDoesntGetMessageFor300ms_ItStartsAnElection()
+    {
+        Node n1 = new(0);
+        var n2 = Substitute.For<INode>();
+        var n3 = Substitute.For<INode>();
+        n2.RequestToVoteFor(Arg.Any<INode>()).Returns(false);
+        n3.RequestToVoteFor(Arg.Any<INode>()).Returns(false);
+        n1.Neighbors = [n2, n3];
+
+        // ACT
+        Thread t = new(() => n1.Run());
+        t.Start();
+
+        Thread.Sleep(300);
+        n1.Stop();
+        t.Join();
+
+        // ASSERT
+        Assert.Equal(NODE_STATE.CANDIDATE, n1.State);
+    }
+
+    [Fact]
     // Testing 8
     public void SingleNode_WhenItBecomesCandidate_ShouldBecomeLeader()
     {
         Node n = new(0);
-        n.SetCandidate();
+        n.BecomeCandidate();
         Assert.Equal(NODE_STATE.LEADER, n.State);
     }
 
@@ -88,7 +111,7 @@ public class RaftTests1
         n2.RequestToVoteFor(Arg.Is<INode>(x => x == n1)).Returns(true);
         n3.RequestToVoteFor(Arg.Is<INode>(x => x == n1)).Returns(true);
 
-        n1.SetCandidate();
+        n1.BecomeCandidate();
 
         n2.Received().RequestToVoteFor(Arg.Is<INode>(x => x == n1));
         n3.Received().RequestToVoteFor(Arg.Is<INode>(x => x == n1));
@@ -117,7 +140,7 @@ public class RaftTests1
         Assert.Equal(0, n.Term);
         Assert.False(n.HasVoted);
 
-        n.SetCandidate();
+        n.BecomeCandidate();
 
         Assert.Equal(1, n.Term);
         Assert.Equal(n, n.Vote);

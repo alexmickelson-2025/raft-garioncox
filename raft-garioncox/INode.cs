@@ -4,7 +4,7 @@ public interface INode
 {
     public bool RequestToVoteFor(INode n);
     public void Heartbeat(INode n);
-    public void SetCandidate();
+    public void BecomeCandidate();
     public bool AppendEntries(INode n);
     public void Run();
     NODE_STATE State { get; set; }
