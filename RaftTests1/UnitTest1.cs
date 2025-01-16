@@ -23,7 +23,7 @@ public class RaftTests1
         t.Join();
 
         // ASSERT
-        follower.Received().Heartbeat(Arg.Any<INode>());
+        follower.Received().Heartbeat(leader.Id, leader.Term);
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public class RaftTests1
         t.Join();
 
         // ASSERT
-        follower.Received(2).Heartbeat(Arg.Any<INode>());
+        follower.Received(2).Heartbeat(leader.Id, leader.Term);
     }
 
     [Fact]
@@ -53,9 +53,9 @@ public class RaftTests1
         Node follower = new(1);
         leader.Neighbors = [follower];
 
-        follower.AppendEntries(leader);
+        follower.AppendEntries(leader.Id, leader.Term);
 
-        Assert.Equal(leader, follower.CurrentLeader);
+        Assert.Equal(leader.Id, follower.CurrentLeader);
     }
 
     [Fact]
@@ -73,8 +73,8 @@ public class RaftTests1
         Node n1 = new(0);
         var n2 = Substitute.For<INode>();
         var n3 = Substitute.For<INode>();
-        n2.RequestToVoteFor(Arg.Any<INode>()).Returns(false);
-        n3.RequestToVoteFor(Arg.Any<INode>()).Returns(false);
+        n2.RequestVoteFor(Arg.Any<int>(), Arg.Any<int>()).Returns(false);
+        n3.RequestVoteFor(Arg.Any<int>(), Arg.Any<int>()).Returns(false);
         n1.Neighbors = [n2, n3];
 
         // ACT
@@ -189,13 +189,13 @@ public class RaftTests1
         var n3 = Substitute.For<INode>();
         n1.Neighbors = [n2, n3];
 
-        n2.RequestToVoteFor(Arg.Is<INode>(x => x == n1)).Returns(true);
-        n3.RequestToVoteFor(Arg.Is<INode>(x => x == n1)).Returns(true);
+        n2.RequestVoteFor(Arg.Any<int>(), Arg.Any<int>()).Returns(true);
+        n3.RequestVoteFor(Arg.Any<int>(), Arg.Any<int>()).Returns(true);
 
         n1.BecomeCandidate();
 
-        n2.Received().RequestToVoteFor(Arg.Is<INode>(x => x == n1));
-        n3.Received().RequestToVoteFor(Arg.Is<INode>(x => x == n1));
+        n2.Received().RequestVoteFor(Arg.Any<int>(), Arg.Any<int>());
+        n3.Received().RequestVoteFor(Arg.Any<int>(), Arg.Any<int>());
         Assert.Equal(NODE_STATE.LEADER, n1.State);
     }
 
@@ -206,9 +206,9 @@ public class RaftTests1
         Node candidate = new(1);
         follower.Neighbors = [candidate];
 
-        follower.RequestToVoteFor(candidate);
+        follower.RequestVoteFor(candidate.Id, candidate.Term);
 
-        Assert.Equal(candidate, follower.Vote);
+        Assert.Equal(candidate.Id, follower.Vote);
         Assert.True(follower.HasVoted);
     }
 
@@ -224,7 +224,7 @@ public class RaftTests1
         n.BecomeCandidate();
 
         Assert.Equal(1, n.Term);
-        Assert.Equal(n, n.Vote);
+        Assert.Equal(n.Id, n.Vote);
         Assert.True(n.HasVoted);
     }
 
@@ -238,7 +238,7 @@ public class RaftTests1
         n2.Term = 1;
         n1.State = NODE_STATE.CANDIDATE;
 
-        n1.AppendEntries(n2);
+        n1.AppendEntries(n2.Id, n2.Term);
 
         Assert.Equal(NODE_STATE.FOLLOWER, n1.State);
     }
@@ -253,7 +253,7 @@ public class RaftTests1
         n2.Term = 0;
         n1.State = NODE_STATE.CANDIDATE;
 
-        n1.AppendEntries(n2);
+        n1.AppendEntries(n2.Id, n2.Term);
 
         Assert.Equal(NODE_STATE.FOLLOWER, n1.State);
     }
@@ -265,9 +265,9 @@ public class RaftTests1
         Node n1 = new(0);
         Node n2 = new(1);
         n1.Term = 0;
-        n1.RequestToVoteFor(n2);
+        n1.RequestVoteFor(n2.Id, n2.Term);
 
-        bool actual = n1.RequestToVoteFor(n2);
+        bool actual = n1.RequestVoteFor(n2.Id, n2.Term);
 
         Assert.False(actual);
     }
@@ -279,10 +279,10 @@ public class RaftTests1
         Node n1 = new(0);
         Node n2 = new(1);
         n1.Term = 0;
-        n1.RequestToVoteFor(n2);
+        n1.RequestVoteFor(n2.Id, n2.Term);
 
         n2.Term = 1;
-        bool actual = n1.RequestToVoteFor(n2);
+        bool actual = n1.RequestVoteFor(n2.Id, n2.Term);
 
         Assert.True(actual);
     }
@@ -294,7 +294,7 @@ public class RaftTests1
         Node n1 = new(0);
         INode n2 = Substitute.For<INode>();
 
-        bool response = n1.AppendEntries(n2);
+        bool response = n1.AppendEntries(n2.Id, n2.Term);
 
         Assert.True(response);
     }
@@ -308,7 +308,7 @@ public class RaftTests1
         n1.Term = 1;
         n2.Term = 0;
 
-        bool response = n1.AppendEntries(n2);
+        bool response = n1.AppendEntries(n2.Id, n2.Term);
 
         Assert.False(response);
     }

@@ -6,9 +6,9 @@ public class Node : INode
     public bool HasVoted { get; set; } = false;
     public int Id { get; }
     public int Term { get; set; } = 0;
-    public INode? Vote { get; set; } = null;
+    public int? Vote { get; set; } = null;
     public INode[] Neighbors { get; set; } = [];
-    public INode? CurrentLeader { get; set; } = null;
+    public int? CurrentLeader { get; set; } = null;
     public volatile int ElectionTimeout = 300; // in ms
     public bool IsRunning = false;
 
@@ -17,11 +17,12 @@ public class Node : INode
         Id = id;
         ResetElectionTimeout();
     }
+
     public void BecomeCandidate()
     {
         State = NODE_STATE.CANDIDATE;
         Term += 1;
-        Vote = this;
+        Vote = Id;
         HasVoted = true;
 
         GetVotes();
@@ -33,7 +34,11 @@ public class Node : INode
         int required = (int)Math.Ceiling((Neighbors.Length + 1.0) / 2);
         foreach (INode node in Neighbors)
         {
-            tally += node.RequestToVoteFor(this) ? 1 : 0;
+            bool voted = node.RequestVoteFor(Id, Term);
+            if (voted)
+            {
+                tally++;
+            }
         }
 
         if (tally >= required)
@@ -42,28 +47,28 @@ public class Node : INode
         }
     }
 
-    public bool RequestToVoteFor(INode n)
+    public bool RequestVoteFor(int cId, int cTerm)
     {
-        if (HasVoted && n.Term <= Term) { return false; }
+        if (HasVoted && cTerm <= Term) { return false; }
 
         HasVoted = true;
-        Vote = n;
+        Vote = cId;
         return true;
     }
 
-    public bool AppendEntries(INode n)
+    public bool AppendEntries(int lId, int lTerm)
     {
-        if (n.Term >= Term)
+        if (lTerm >= Term)
         {
             State = NODE_STATE.FOLLOWER;
-            CurrentLeader = n;
+            CurrentLeader = lId;
             return true;
         }
 
         return false;
     }
 
-    public void Heartbeat(INode n)
+    public void Heartbeat(int lId, int lTerm)
     {
         throw new NotImplementedException();
     }
@@ -82,7 +87,7 @@ public class Node : INode
                 {
                     foreach (INode n in Neighbors)
                     {
-                        n.Heartbeat(this);
+                        n.Heartbeat(Id, Term);
                     }
                 }
 
