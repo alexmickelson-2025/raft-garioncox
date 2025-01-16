@@ -150,6 +150,34 @@ public class RaftTests1
     }
 
     [Fact]
+    // Testing 7
+    public void WhenFollowerGetsAppendEntriesMessage_ItResetsElectionTimer()
+    {
+        // (i.e. it doesn't start an election even after more than 300ms)
+        Node follower = new(0);
+        Node leader = new(1);
+        Node n2 = new(2);
+        follower.Term = 0;
+        leader.Term = 1;
+        follower.Neighbors = [leader, n2];
+
+        Thread t = new(() => follower.Run());
+        t.Start();
+
+        for (int i = 0; i < 4; i++)
+        {
+            bool worked = follower.AppendEntries(leader);
+            Assert.True(worked);
+            Thread.Sleep(50);
+        }
+
+        follower.Stop();
+        t.Join();
+
+        Assert.True(follower.State == NODE_STATE.FOLLOWER);
+    }
+
+    [Fact]
     // Testing 8
     public void SingleNode_WhenItBecomesCandidate_ShouldBecomeLeader()
     {
