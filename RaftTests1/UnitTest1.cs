@@ -143,33 +143,35 @@ public class RaftTests1
         Assert.True(newTerm > previousTerm);
     }
 
-    // [Fact]
-    // // Testing 7
-    // public void WhenFollowerGetsAppendEntriesMessage_ItResetsElectionTimer()
-    // {
-    //     // (i.e. it doesn't start an election even after more than 300ms)
-    //     Node follower = new(0);
-    //     Node leader = new(1);
-    //     Node n2 = new(2);
-    //     follower.Term = 0;
-    //     leader.Term = 1;
-    //     follower.Neighbors = [leader, n2];
+    [Fact]
+    // Testing 7
+    public void WhenFollowerGetsAppendEntriesMessage_ItResetsElectionTimer()
+    {
+        // ARRANGE
+        Node follower = new(0);
+        var leader = Substitute.For<INode>();
+        var n2 = Substitute.For<INode>();
 
-    //     Thread t = follower.Run();
+        leader.Id.Returns(0);
+        leader.Id.Returns(1);
+        follower.Neighbors = [leader, n2];
 
-    //     for (int i = 0; i < 4; i++)
-    //     {
-    //         bool worked = follower.AppendEntries(leader);
-    //         Assert.True(worked);
-    //         Thread.Sleep(50);
-    //     }
+        // ACT
+        Thread t = follower.Run();
 
-    //     follower.Stop();
-    //     t.Join();
+        for (int i = 0; i < 4; i++)
+        {
+            bool worked = follower.AppendEntries(leader.Id, leader.Term);
+            Assert.True(worked);
+            Thread.Sleep(50);
+        }
 
-    //     Assert.True(follower.State == NODE_STATE.FOLLOWER);
-    //     Assert.True(false);
-    // }
+        follower.Stop();
+        t.Join();
+
+        // ASSERT
+        Assert.True(follower.State == NODE_STATE.FOLLOWER);
+    }
 
     [Fact]
     // Testing 8

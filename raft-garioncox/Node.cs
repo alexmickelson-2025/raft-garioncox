@@ -9,7 +9,8 @@ public class Node : INode
     public int? Vote { get; set; } = null;
     public INode[] Neighbors { get; set; } = [];
     public int? CurrentLeader { get; set; } = null;
-    public volatile int ElectionTimeout = 300; // in ms
+    private readonly object TimeoutLock = new();
+    public int ElectionTimeout = 300; // in ms
     public bool IsRunning = false;
 
     public Node(int id)
@@ -93,7 +94,10 @@ public class Node : INode
 
                 if (State == NODE_STATE.FOLLOWER)
                 {
-                    ElectionTimeout -= 10;
+                    lock (TimeoutLock)
+                    {
+                        ElectionTimeout -= 10;
+                    }
 
                     if (ElectionTimeout <= 0)
                     {
@@ -121,7 +125,10 @@ public class Node : INode
     private void ResetElectionTimeout()
     {
         Random r = new();
-        ElectionTimeout = r.Next(150, 301);
+        lock (TimeoutLock)
+        {
+            ElectionTimeout = r.Next(150, 301);
+        }
     }
 
     public void Stop()
