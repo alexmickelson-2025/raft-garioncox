@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using NSubstitute;
 using raft_garioncox;
 using Xunit.Sdk;
@@ -127,6 +128,25 @@ public class RaftTests1
         t.Join();
 
         Assert.InRange(n1.ElectionTimeout, 150, 300);
+    }
+
+    [Fact]
+    // Testing 6
+    public void WhenNewElectionBegins_TermIsIncrementedBy1()
+    {
+        Node n = new(0);
+        int previousTerm = n.Term;
+
+        Thread t = new(() => n.Run());
+        t.Start();
+
+        Thread.Sleep(300);
+        n.Stop();
+        t.Join();
+
+        int newTerm = n.Term;
+
+        Assert.True(newTerm > previousTerm);
     }
 
     [Fact]
