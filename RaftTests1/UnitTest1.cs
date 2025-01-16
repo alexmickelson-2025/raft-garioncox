@@ -1,5 +1,6 @@
 using NSubstitute;
 using raft_garioncox;
+using Xunit.Sdk;
 
 namespace RaftTests1;
 
@@ -88,6 +89,44 @@ public class RaftTests1
 
         // ASSERT
         Assert.Equal(NODE_STATE.CANDIDATE, n1.State);
+    }
+
+    [Fact]
+    public void ElectionTimeInitialized_WithRandomValueBetween150and300ms()
+    {
+        int previousTimeout = 0;
+        int matches = 0;
+        for (int i = 0; i < 100; i++)
+        {
+            Node n1 = new(0);
+            if (previousTimeout == n1.ElectionTimeout)
+            {
+                matches++;
+            }
+
+            previousTimeout = n1.ElectionTimeout;
+
+            Assert.InRange(n1.ElectionTimeout, 150, 300);
+        }
+
+        Assert.True(matches < 20);
+    }
+
+    [Fact]
+    // Testing 5
+    public void ElectionTimeReset_WithRandomValueBetween150and300ms()
+    {
+        Node n1 = new(0);
+        n1.ElectionTimeout = 10;
+
+        Thread t = new(() => n1.Run());
+        t.Start();
+
+        Thread.Sleep(10);
+        n1.Stop();
+        t.Join();
+
+        Assert.InRange(n1.ElectionTimeout, 150, 300);
     }
 
     [Fact]

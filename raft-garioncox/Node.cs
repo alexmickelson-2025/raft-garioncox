@@ -1,10 +1,10 @@
 ﻿namespace raft_garioncox;
 
-public class Node(int id) : INode
+public class Node : INode
 {
     public NODE_STATE State { get; set; } = NODE_STATE.FOLLOWER;
     public bool HasVoted { get; set; } = false;
-    public int Id { get; } = id;
+    public int Id { get; }
     public int Term { get; set; } = 0;
     public INode? Vote { get; set; } = null;
     public INode[] Neighbors { get; set; } = [];
@@ -12,6 +12,11 @@ public class Node(int id) : INode
     public volatile int ElectionTimeout = 300; // in ms
     public bool Running = true;
 
+    public Node(int id)
+    {
+        Id = id;
+        ResetElectionTimeout();
+    }
     public void BecomeCandidate()
     {
         State = NODE_STATE.CANDIDATE;
@@ -90,6 +95,7 @@ public class Node(int id) : INode
 
                 if (ElectionTimeout <= 0)
                 {
+                    ResetElectionTimeout();
                     BecomeCandidate();
                 }
 
@@ -103,6 +109,12 @@ public class Node(int id) : INode
                 }
             }
         }
+    }
+
+    private void ResetElectionTimeout()
+    {
+        Random r = new();
+        ElectionTimeout = r.Next(150, 301);
     }
 
     public void Stop()
