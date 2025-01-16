@@ -47,6 +47,19 @@ public class RaftTests1
     }
 
     [Fact]
+    // Testing 2
+    public void Cluster_WhenNodeReceivesAppendEntries_ThenRemembersOtherNodeIsCurrentLeader()
+    {
+        Node leader = new(0) { State = NODE_STATE.LEADER };
+        Node follower = new(1);
+        leader.Neighbors = [follower];
+
+        follower.AppendEntries(leader);
+
+        Assert.Equal(leader, follower.CurrentLeader);
+    }
+
+    [Fact]
     // Testing 3
     public void SingleNode_WhenInitialized_ShouldBeInFollowerState()
     {

@@ -8,6 +8,7 @@ public class Node(int id) : INode
     public int Term { get; set; } = 0;
     public INode? Vote { get; set; } = null;
     public INode[] Neighbors { get; set; } = [];
+    public INode? CurrentLeader { get; set; } = null;
     public bool Running = true;
 
     public void SetCandidate()
@@ -49,6 +50,7 @@ public class Node(int id) : INode
         if (n.Term >= Term)
         {
             State = NODE_STATE.FOLLOWER;
+            CurrentLeader = n;
             return true;
         }
 
@@ -59,6 +61,7 @@ public class Node(int id) : INode
     {
         throw new NotImplementedException();
     }
+
     public void Run()
     {
         while (Running)
