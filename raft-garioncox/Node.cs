@@ -10,7 +10,7 @@ public class Node : INode
     public INode[] Neighbors { get; set; } = [];
     public INode? CurrentLeader { get; set; } = null;
     public volatile int ElectionTimeout = 300; // in ms
-    public bool Running = true;
+    public bool IsRunning = false;
 
     public Node(int id)
     {
@@ -68,47 +68,49 @@ public class Node : INode
         throw new NotImplementedException();
     }
 
-    public void Run()
+    public Thread Run()
     {
-        while (Running)
+        Thread t = new(() =>
         {
-            if (State == NODE_STATE.LEADER)
+            // If already running, don't run again
+            if (IsRunning) { return; }
+
+            IsRunning = true;
+            while (IsRunning)
             {
-                foreach (INode n in Neighbors)
+                if (State == NODE_STATE.LEADER)
                 {
-                    n.Heartbeat(this);
+                    foreach (INode n in Neighbors)
+                    {
+                        n.Heartbeat(this);
+                    }
+                }
+
+                if (State == NODE_STATE.FOLLOWER)
+                {
+                    ElectionTimeout -= 10;
+
+                    if (ElectionTimeout <= 0)
+                    {
+                        ResetElectionTimeout();
+                        BecomeCandidate();
+                    }
+
                 }
 
                 try
                 {
-                    Thread.Sleep(50);
+                    Thread.Sleep(State == NODE_STATE.LEADER ? 50 : 10);
                 }
                 catch (ThreadInterruptedException)
                 {
-                    break;
+                    IsRunning = false;
                 }
             }
+        });
 
-            if (State == NODE_STATE.FOLLOWER)
-            {
-                ElectionTimeout -= 10;
-
-                if (ElectionTimeout <= 0)
-                {
-                    ResetElectionTimeout();
-                    BecomeCandidate();
-                }
-
-                try
-                {
-                    Thread.Sleep(10);
-                }
-                catch (ThreadInterruptedException)
-                {
-                    break;
-                }
-            }
-        }
+        t.Start();
+        return t;
     }
 
     private void ResetElectionTimeout()
@@ -119,6 +121,6 @@ public class Node : INode
 
     public void Stop()
     {
-        Running = false;
+        IsRunning = false;
     }
 }

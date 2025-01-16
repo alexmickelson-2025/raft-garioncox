@@ -6,7 +6,7 @@ public interface INode
     public void Heartbeat(INode n);
     public void BecomeCandidate();
     public bool AppendEntries(INode n);
-    public void Run();
+    public Thread Run();
     NODE_STATE State { get; set; }
     bool HasVoted { get; set; }
     int Id { get; }
