@@ -3,20 +3,32 @@
 public class Node : INode
 {
     public NODE_STATE State { get; set; } = NODE_STATE.FOLLOWER;
-    public bool HasVoted { get; set; } = false;
     public int Id { get; }
-    public int Term { get; set; } = 0;
-    public int? Vote { get; set; } = null;
-    public INode[] Neighbors { get; set; } = [];
     public int? CurrentLeader { get; set; } = null;
-    private readonly object TimeoutLock = new();
     public int ElectionTimeout = 300; // in ms
+    public bool HasVoted { get; set; } = false;
     public bool IsRunning = false;
+    public INode[] Neighbors { get; set; } = [];
+    public int Term { get; set; } = 0;
+    private readonly object TimeoutLock = new();
+    public int? Vote { get; set; } = null;
 
     public Node(int id)
     {
         Id = id;
         ResetElectionTimeout();
+    }
+
+    public bool AppendEntries(int lId, int lTerm)
+    {
+        if (lTerm >= Term)
+        {
+            State = NODE_STATE.FOLLOWER;
+            CurrentLeader = lId;
+            return true;
+        }
+
+        return false;
     }
 
     public void BecomeCandidate()
@@ -48,6 +60,11 @@ public class Node : INode
         }
     }
 
+    public void Heartbeat(int lId, int lTerm)
+    {
+        throw new NotImplementedException();
+    }
+
     public bool RequestVoteFor(int cId, int cTerm)
     {
         if (HasVoted && cTerm <= Term) { return false; }
@@ -57,21 +74,13 @@ public class Node : INode
         return true;
     }
 
-    public bool AppendEntries(int lId, int lTerm)
+    private void ResetElectionTimeout()
     {
-        if (lTerm >= Term)
+        Random r = new();
+        lock (TimeoutLock)
         {
-            State = NODE_STATE.FOLLOWER;
-            CurrentLeader = lId;
-            return true;
+            ElectionTimeout = r.Next(150, 301);
         }
-
-        return false;
-    }
-
-    public void Heartbeat(int lId, int lTerm)
-    {
-        throw new NotImplementedException();
     }
 
     public Thread Run()
@@ -120,15 +129,6 @@ public class Node : INode
 
         t.Start();
         return t;
-    }
-
-    private void ResetElectionTimeout()
-    {
-        Random r = new();
-        lock (TimeoutLock)
-        {
-            ElectionTimeout = r.Next(150, 301);
-        }
     }
 
     public void Stop()
