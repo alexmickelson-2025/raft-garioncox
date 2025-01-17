@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Security.AccessControl;
 using NSubstitute;
+using NSubstitute.Core.Arguments;
 using raft_garioncox;
 
 namespace RaftTests1;
@@ -351,7 +352,7 @@ public class RaftTests1
 
         Thread t = candidate.Run();
 
-        Thread.Sleep(320);
+        Thread.Sleep(350);
         candidate.Stop();
 
         t.Join();
@@ -383,5 +384,25 @@ public class RaftTests1
         bool response = n1.AppendEntries(n2.Id, n2.Term);
 
         Assert.False(response);
+    }
+
+    [Fact]
+    // Test 19
+    public void WhenCandidateWinsElection_ItImmediatelySendsHeartbeat()
+    {
+        var n1 = Substitute.For<INode>();
+        Node candidate = new(0)
+        {
+            ElectionTimeout = 10,
+            Neighbors = [n1]
+        };
+
+        n1.When(n => n.RequestVoteForRPC(Arg.Any<int>(), Arg.Any<int>()))
+            .Do(n => candidate.ReceiveVote(true));
+
+        Thread t = candidate.Run();
+        Thread.Sleep(100);
+
+        n1.Received().Heartbeat(Arg.Any<int>(), Arg.Any<int>());
     }
 }
