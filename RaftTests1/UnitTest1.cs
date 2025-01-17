@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Security.AccessControl;
 using NSubstitute;
 using raft_garioncox;
 
@@ -332,6 +333,30 @@ public class RaftTests1
         bool actual = n1.RequestVoteFor(n2.Id, n2.Term);
 
         Assert.True(actual);
+    }
+
+    [Fact]
+    // Testing 16
+    public void GivenCandidate_WhenElectionTimerExpiresInsideElection_NewElectionStarted()
+    {
+        int initialTerm = 0;
+        var n1 = Substitute.For<INode>();
+        var n2 = Substitute.For<INode>();
+        Node candidate = new(0)
+        {
+            Term = initialTerm,
+            Neighbors = [n1, n2],
+            ElectionTimeout = 10
+        };
+
+        Thread t = candidate.Run();
+
+        Thread.Sleep(320);
+        candidate.Stop();
+
+        t.Join();
+
+        Assert.True(candidate.Term > 1);
     }
 
     [Fact]
