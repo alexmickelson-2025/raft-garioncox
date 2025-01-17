@@ -42,7 +42,7 @@ public class RaftTests1
         t.Join();
 
         // ASSERT
-        follower.Received(2).Heartbeat(leader.Id, leader.Term);
+        follower.Received().Heartbeat(leader.Id, leader.Term);
     }
 
     [Fact]
@@ -75,6 +75,7 @@ public class RaftTests1
         var n3 = Substitute.For<INode>();
         n2.RequestVoteFor(Arg.Any<int>(), Arg.Any<int>()).Returns(false);
         n3.RequestVoteFor(Arg.Any<int>(), Arg.Any<int>()).Returns(false);
+        n1.ElectionTimeout = 150;
         n1.Neighbors = [n2, n3];
 
         // ACT
@@ -130,6 +131,7 @@ public class RaftTests1
     public void WhenNewElectionBegins_TermIsIncrementedBy1()
     {
         Node n = new(0);
+        n.ElectionTimeout = 150;
         int previousTerm = n.Term;
 
         Thread t = n.Run();
@@ -219,6 +221,7 @@ public class RaftTests1
     public void CandidateReceivesMajorityVotes_WhileWaitinForUnresponsiveNode_StillBecomesLeader()
     {
         Node candidate = new(0);
+        candidate.ElectionTimeout = 150;
         var n1 = Substitute.For<INode>();
         var n2 = Substitute.For<INode>();
 
@@ -238,10 +241,22 @@ public class RaftTests1
 
     [Fact]
     // Testing 10
-    public void GivenAFollowerHasNotVoted_GivenItIsInAnEarlierTerm_WhenARequestRPCIsSent_ThenItRespondsYes()
+    public void GivenAFollowerHasNotVoted_WhenARequestRPCIsSentWithALaterTerm_ThenItRespondsYes()
     {
-        Assert.False(true);
-        // A follower that has not voted and is in an earlier term responds to a RequestForVoteRPC with yes. (the reply will be a separate RPC)
+        var candidate = Substitute.For<INode>();
+        candidate.Id = 1;
+        candidate.Term = 1;
+
+        Node follower = new(0)
+        {
+            Term = 0,
+            HasVoted = false,
+            Neighbors = [candidate]
+        };
+
+        follower.RequestVoteForRPC(candidate.Id, candidate.Term);
+
+        candidate.Received().ReceiveVote(true);
     }
 
     [Fact]

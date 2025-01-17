@@ -3,7 +3,7 @@
 public class Node : INode
 {
     public NODESTATE State { get; set; } = NODESTATE.FOLLOWER;
-    public int Id { get; }
+    public int Id { get; set; }
     public int? CurrentLeader { get; set; } = null;
     public int ElectionTimeout = 300; // in ms
     public bool HasVoted { get; set; } = false;

@@ -2,7 +2,7 @@ using raft_garioncox;
 
 public interface INode
 {
-    int Id { get; }
+    int Id { get; set; }
     bool HasVoted { get; set; }
     INode[] Neighbors { get; set; }
     NODESTATE State { get; set; }
