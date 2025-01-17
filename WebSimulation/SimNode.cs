@@ -3,43 +3,50 @@ using raft_garioncox;
 public class SimNode : INode
 {
     Node node;
-
-    public NODESTATE State { get => ((INode)node).State; set => ((INode)node).State = value; }
+    public int Id { get => ((INode)node).Id; set => ((INode)node).Id = value; }
     public bool HasVoted { get => ((INode)node).HasVoted; set => ((INode)node).HasVoted = value; }
-
-    public int Id => ((INode)node).Id;
-
-    public int Term { get => ((INode)node).Term; set => ((INode)node).Term = value; }
-    public INode? Vote { get => ((INode)node).Vote; set => ((INode)node).Vote = value; }
     public INode[] Neighbors { get => ((INode)node).Neighbors; set => ((INode)node).Neighbors = value; }
+    public NODESTATE State { get => ((INode)node).State; set => ((INode)node).State = value; }
+    public int Term { get => ((INode)node).Term; set => ((INode)node).Term = value; }
+    public int? Vote { get => ((INode)node).Vote; set => ((INode)node).Vote = value; }
 
     public SimNode(Node n)
     {
         node = n;
     }
 
-    public void Heartbeat(INode n)
+    public bool AppendEntries(int id, int term)
     {
-        ((INode)node).Heartbeat(n);
+        return ((INode)node).AppendEntries(id, term);
     }
 
-    public bool RequestToVoteFor(INode n)
+    public void BecomeCandidate()
     {
-        return ((INode)node).RequestToVoteFor(n);
+        ((INode)node).BecomeCandidate();
     }
 
-    public void SetCandidate()
+    public void ReceiveVote(bool vote)
     {
-        ((INode)node).SetCandidate();
+        ((INode)node).ReceiveVote(vote);
     }
 
-    public bool AppendEntries(INode n)
+    public bool RequestVoteFor(int id, int term)
     {
-        return ((INode)node).AppendEntries(n);
+        return ((INode)node).RequestVoteFor(id, term);
     }
 
-    public void Run()
+    public Task RequestVoteForRPC(int cId, int cTerm)
     {
-        ((INode)node).Run();
+        return ((INode)node).RequestVoteForRPC(cId, cTerm);
+    }
+
+    public void RequestVotesRPC()
+    {
+        ((INode)node).RequestVotesRPC();
+    }
+
+    public Thread Run()
+    {
+        return ((INode)node).Run();
     }
 }

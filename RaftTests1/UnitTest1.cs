@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Security.AccessControl;
+using Newtonsoft.Json.Serialization;
 using NSubstitute;
 using NSubstitute.Core.Arguments;
 using raft_garioncox;
@@ -51,7 +52,9 @@ public class RaftTests1
     // Testing 2
     public void Cluster_WhenNodeReceivesAppendEntries_ThenRemembersOtherNodeIsCurrentLeader()
     {
-        Node leader = new(0) { State = NODESTATE.LEADER };
+        var leader = Substitute.For<INode>();
+        leader.State.Returns(NODESTATE.LEADER);
+        leader.Id.Returns(1);
         Node follower = new(1);
         leader.Neighbors = [follower];
 
@@ -116,8 +119,10 @@ public class RaftTests1
     // Testing 5
     public void ElectionTimeReset_WithRandomValueBetween150and300ms()
     {
-        Node n1 = new(0);
-        n1.ElectionTimeout = 10;
+        Node n1 = new(0)
+        {
+            ElectionTimeout = 10
+        };
 
         Thread t = n1.Run();
 
@@ -132,8 +137,10 @@ public class RaftTests1
     // Testing 6
     public void WhenNewElectionBegins_TermIsIncrementedBy1()
     {
-        Node n = new(0);
-        n.ElectionTimeout = 150;
+        Node n = new(0)
+        {
+            ElectionTimeout = 150
+        };
         int previousTerm = n.Term;
 
         Thread t = n.Run();
@@ -209,7 +216,9 @@ public class RaftTests1
     public void NodeVotesForCandidate_WhenVoteRequested()
     {
         Node follower = new(0);
-        Node candidate = new(1);
+        var candidate = Substitute.For<INode>();
+        candidate.Id.Returns(1);
+        candidate.Term.Returns(0);
         follower.Neighbors = [candidate];
 
         follower.RequestVoteFor(candidate.Id, candidate.Term);
@@ -222,8 +231,10 @@ public class RaftTests1
     // Testing 9
     public void CandidateReceivesMajorityVotes_WhileWaitinForUnresponsiveNode_StillBecomesLeader()
     {
-        Node candidate = new(0);
-        candidate.ElectionTimeout = 150;
+        Node candidate = new(0)
+        {
+            ElectionTimeout = 150
+        };
         var n1 = Substitute.For<INode>();
         var n2 = Substitute.For<INode>();
 
@@ -282,9 +293,11 @@ public class RaftTests1
     public void WhenCandidateReceivesMessageFromLaterTerm_BecomesFollower()
     {
         Node n1 = new(0);
-        Node n2 = new(1);
+        var n2 = Substitute.For<INode>();
+        n2.Term.Returns(1);
+        n2.Id.Returns(1);
+
         n1.Term = 0;
-        n2.Term = 1;
         n1.State = NODESTATE.CANDIDATE;
 
         n1.AppendEntries(n2.Id, n2.Term);
@@ -297,9 +310,10 @@ public class RaftTests1
     public void WhenCandidateReceivesMessageFromEqualTerm_BecomesFollower()
     {
         Node n1 = new(0);
-        Node n2 = new(1);
+        var n2 = Substitute.For<INode>();
+        n2.Term.Returns(1);
+        n2.Id.Returns(1);
         n1.Term = 0;
-        n2.Term = 0;
         n1.State = NODESTATE.CANDIDATE;
 
         n1.AppendEntries(n2.Id, n2.Term);
@@ -312,7 +326,9 @@ public class RaftTests1
     public void IfNodeReceivesSecondVoteRequest_ShouldRespondNo()
     {
         Node n1 = new(0);
-        Node n2 = new(1);
+        var n2 = Substitute.For<INode>();
+        n2.Term.Returns(0);
+        n2.Id.Returns(1);
         n1.Term = 0;
         n1.RequestVoteFor(n2.Id, n2.Term);
 
@@ -326,7 +342,9 @@ public class RaftTests1
     public void IfNodeReceivesSecondVoteRequestForFutureTurm_ShouldRespondYes()
     {
         Node n1 = new(0);
-        Node n2 = new(1);
+        var n2 = Substitute.For<INode>();
+        n2.Term.Returns(0);
+        n2.Id.Returns(1);
         n1.Term = 0;
         n1.RequestVoteFor(n2.Id, n2.Term);
 
