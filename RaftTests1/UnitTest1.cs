@@ -25,7 +25,7 @@ public class RaftTests1
         t.Join();
 
         // ASSERT
-        follower.Received().Heartbeat(leader.Id, leader.Term);
+        follower.Received().AppendEntries(leader.Id, leader.Term);
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public class RaftTests1
         t.Join();
 
         // ASSERT
-        follower.Received().Heartbeat(leader.Id, leader.Term);
+        follower.Received().AppendEntries(leader.Id, leader.Term);
     }
 
     [Fact]
@@ -340,12 +340,12 @@ public class RaftTests1
     // Testing 16
     public void GivenCandidate_WhenElectionTimerExpiresInsideElection_NewElectionStarted()
     {
-        int initialTerm = 0;
         var n1 = Substitute.For<INode>();
         var n2 = Substitute.For<INode>();
         Node candidate = new(0)
         {
-            Term = initialTerm,
+            Term = 1,
+            State = NODESTATE.CANDIDATE,
             Neighbors = [n1, n2],
             ElectionTimeout = 10
         };
@@ -403,6 +403,6 @@ public class RaftTests1
         Thread t = candidate.Run();
         Thread.Sleep(100);
 
-        n1.Received().Heartbeat(Arg.Any<int>(), Arg.Any<int>());
+        n1.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>());
     }
 }

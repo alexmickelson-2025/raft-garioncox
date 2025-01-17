@@ -28,6 +28,7 @@ public class Node : INode
         {
             State = NODESTATE.FOLLOWER;
             CurrentLeader = leaderId;
+            ResetElectionTimeout();
             return true;
         }
 
@@ -60,11 +61,6 @@ public class Node : INode
         {
             State = NODESTATE.LEADER;
         }
-    }
-
-    public void Heartbeat(int lId, int lTerm)
-    {
-        throw new NotImplementedException();
     }
 
     public void ReceiveVote(bool vote)
@@ -133,7 +129,7 @@ public class Node : INode
                 {
                     foreach (INode n in Neighbors)
                     {
-                        n.Heartbeat(Id, Term);
+                        n.AppendEntries(Id, Term);
                     }
                 }
 

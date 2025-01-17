@@ -10,7 +10,6 @@ public interface INode
     int? Vote { get; set; }
     public bool AppendEntries(int id, int term);
     public void BecomeCandidate();
-    public void Heartbeat(int id, int term);
     public void ReceiveVote(bool vote);
     public bool RequestVoteFor(int id, int term);
     public Task RequestVoteForRPC(int cId, int cTerm);
