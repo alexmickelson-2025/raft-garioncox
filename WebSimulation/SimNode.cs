@@ -9,6 +9,8 @@ public class SimNode : INode
     public NODESTATE State { get => ((INode)node).State; set => ((INode)node).State = value; }
     public int Term { get => ((INode)node).Term; set => ((INode)node).Term = value; }
     public int? Vote { get => ((INode)node).Vote; set => ((INode)node).Vote = value; }
+    public int ElectionTimeout { get => ((INode)node).ElectionTimeout; set => ((INode)node).ElectionTimeout = value; }
+    public int? CurrentLeader { get => ((INode)node).CurrentLeader; set => ((INode)node).CurrentLeader = value; }
 
     public SimNode(Node n)
     {

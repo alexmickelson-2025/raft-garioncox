@@ -1,0 +1,74 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using raft_garioncox
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+@* <button @onclick="startSimulation" class="btn btn-primary">Start</button> *@
+
+<div class="row p-3 col-12">
+    @foreach (var n in nodes)
+    {
+        var timeoutRemaining = n.ElectionTimeout;
+        var maxIntervalMilliseconds = 300 * 12;
+        var percentageRemaining = (int)(100 * (Math.Abs(n.ElectionTimeout) / maxIntervalMilliseconds));
+        <div class="col border p-3 m-2 rounded-3">
+            @n.Id
+            @n.ElectionTimeout
+            @n.State
+            @n.Term
+            @((n.CurrentLeader != null) ? n.CurrentLeader : "No leader")
+            <div>
+                <div class="progress" role="progressbar" aria-label="Basic example"
+                    aria-valuenow=@(Math.Abs(n.ElectionTimeout)) aria-valuemin="0"
+                    aria-valuemax="@(maxIntervalMilliseconds)">
+                    <div class="progress-bar bg-dark-subtle" style="width: @percentageRemaining%;"></div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<div>
+    <label for="NetworkDelay" class="form-label">Network Delay: @NetworkDelay</label>
+    <input type="range" class="form-range" id="NetworkDelay" @bind=NetworkDelay>
+
+    <label for="TimeoutMultiplier" class="form-label">Timeout Multiplier: @TimeoutMultiplier</label>
+    <input type="range" class="form-range" id="TimeoutMultiplier" @bind=TimeoutMultiplier>
+</div>
+
+@code {
+    List<SimNode> nodes = [];
+    int NetworkDelay = 0;
+    int TimeoutMultiplier = 1;
+    public required Timer timer;
+
+    protected override void OnInitialized()
+    {
+        var node1 = new Node(0);
+        var node2 = new Node(1);
+        var node3 = new Node(2);
+
+        var sim1 = new SimNode(node1);
+        var sim2 = new SimNode(node2);
+        var sim3 = new SimNode(node3);
+
+        sim1.Neighbors = [sim2, sim3];
+        sim2.Neighbors = [sim1, sim3];
+        sim3.Neighbors = [sim1, sim2];
+
+        nodes = [sim1, sim2, sim3];
+        StateHasChanged();
+
+        sim1.Run();
+        sim1.Run();
+        sim1.Run();
+
+        timer = new(_ =>
+        {
+            InvokeAsync(StateHasChanged);
+        }, null, 0, 200);
+    }
+}

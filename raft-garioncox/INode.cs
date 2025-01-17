@@ -2,6 +2,8 @@ using raft_garioncox;
 
 public interface INode
 {
+    int? CurrentLeader { get; set; }
+    int ElectionTimeout { get; set; } // in ms
     int Id { get; set; }
     bool HasVoted { get; set; }
     INode[] Neighbors { get; set; }

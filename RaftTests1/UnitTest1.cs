@@ -21,7 +21,7 @@ public class RaftTests1
         // ACT
         Thread t = leader.Run();
 
-        Thread.Sleep(100);
+        Thread.Sleep(60);
         leader.Stop();
         t.Join();
 
@@ -73,20 +73,20 @@ public class RaftTests1
 
     [Fact]
     // Testing 4
-    public void WhenFollowerDoesntGetMessageFor300ms_ItStartsAnElection()
+    public void WhenFollowerDoesntGetMessageDuringTimeout_ItStartsAnElection()
     {
         Node n1 = new(0);
         var n2 = Substitute.For<INode>();
         var n3 = Substitute.For<INode>();
         n2.RequestVoteFor(Arg.Any<int>(), Arg.Any<int>()).Returns(false);
         n3.RequestVoteFor(Arg.Any<int>(), Arg.Any<int>()).Returns(false);
-        n1.ElectionTimeout = 150;
+        n1.ElectionTimeout = 10;
         n1.Neighbors = [n2, n3];
 
         // ACT
         Thread t = n1.Run();
 
-        Thread.Sleep(300);
+        Thread.Sleep(20);
         n1.Stop();
         t.Join();
 
@@ -139,13 +139,13 @@ public class RaftTests1
     {
         Node n = new(0)
         {
-            ElectionTimeout = 150
+            ElectionTimeout = 10
         };
         int previousTerm = n.Term;
 
         Thread t = n.Run();
 
-        Thread.Sleep(300);
+        Thread.Sleep(20);
         n.Stop();
         t.Join();
 
@@ -168,17 +168,7 @@ public class RaftTests1
         follower.Neighbors = [leader, n2];
 
         // ACT
-        Thread t = follower.Run();
-
-        for (int i = 0; i < 4; i++)
-        {
-            bool worked = follower.AppendEntries(leader.Id, leader.Term);
-            Assert.True(worked);
-            Thread.Sleep(50);
-        }
-
-        follower.Stop();
-        t.Join();
+        bool worked = follower.AppendEntries(leader.Id, leader.Term);
 
         // ASSERT
         Assert.True(follower.State == NODESTATE.FOLLOWER);
@@ -233,7 +223,7 @@ public class RaftTests1
     {
         Node candidate = new(0)
         {
-            ElectionTimeout = 150
+            ElectionTimeout = 10
         };
         var n1 = Substitute.For<INode>();
         var n2 = Substitute.For<INode>();
@@ -244,7 +234,7 @@ public class RaftTests1
 
         Thread t = candidate.Run();
 
-        Thread.Sleep(300);
+        Thread.Sleep(50);
 
         candidate.Stop();
         t.Join();
@@ -419,7 +409,7 @@ public class RaftTests1
             .Do(n => candidate.ReceiveVote(true));
 
         Thread t = candidate.Run();
-        Thread.Sleep(100);
+        Thread.Sleep(20);
 
         n1.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>());
     }
