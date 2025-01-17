@@ -1,6 +1,6 @@
 namespace raft_garioncox;
 
-public enum NODE_STATE
+public enum NODESTATE
 {
     CANDIDATE,
     FOLLOWER,

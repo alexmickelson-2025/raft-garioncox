@@ -2,15 +2,18 @@
 
 public class Node : INode
 {
-    public NODE_STATE State { get; set; } = NODE_STATE.FOLLOWER;
+    public NODESTATE State { get; set; } = NODESTATE.FOLLOWER;
     public int Id { get; }
     public int? CurrentLeader { get; set; } = null;
     public int ElectionTimeout = 300; // in ms
     public bool HasVoted { get; set; } = false;
     public bool IsRunning = false;
+    private int Majority => (int)Math.Ceiling((Neighbors.Length + 1.0) / 2);
     public INode[] Neighbors { get; set; } = [];
     public int Term { get; set; } = 0;
     private readonly object TimeoutLock = new();
+    private object VoteCountLock = new();
+    private int VoteCount = 0;
     public int? Vote { get; set; } = null;
 
     public Node(int id)
@@ -19,12 +22,12 @@ public class Node : INode
         ResetElectionTimeout();
     }
 
-    public bool AppendEntries(int lId, int lTerm)
+    public bool AppendEntries(int leaderId, int leaderTerm)
     {
-        if (lTerm >= Term)
+        if (leaderTerm >= Term)
         {
-            State = NODE_STATE.FOLLOWER;
-            CurrentLeader = lId;
+            State = NODESTATE.FOLLOWER;
+            CurrentLeader = leaderId;
             return true;
         }
 
@@ -33,18 +36,17 @@ public class Node : INode
 
     public void BecomeCandidate()
     {
-        State = NODE_STATE.CANDIDATE;
+        State = NODESTATE.CANDIDATE;
         Term += 1;
         Vote = Id;
         HasVoted = true;
 
-        GetVotes();
+        RequestVotes();
     }
 
-    private void GetVotes()
+    private void RequestVotes()
     {
         int tally = 1;
-        int required = (int)Math.Ceiling((Neighbors.Length + 1.0) / 2);
         foreach (INode node in Neighbors)
         {
             bool voted = node.RequestVoteFor(Id, Term);
@@ -54,15 +56,23 @@ public class Node : INode
             }
         }
 
-        if (tally >= required)
+        if (tally >= Majority)
         {
-            State = NODE_STATE.LEADER;
+            State = NODESTATE.LEADER;
         }
     }
 
     public void Heartbeat(int lId, int lTerm)
     {
         throw new NotImplementedException();
+    }
+
+    public void ReceiveVote(bool vote)
+    {
+        lock (VoteCountLock)
+        {
+            VoteCount++;
+        }
     }
 
     public bool RequestVoteFor(int cId, int cTerm)
@@ -72,6 +82,32 @@ public class Node : INode
         HasVoted = true;
         Vote = cId;
         return true;
+    }
+
+    public Task RequestVoteForRPC(int cId, int cTerm)
+    {
+        INode candidate = Neighbors.Where(n => n.Id == cId).First();
+
+        if (HasVoted && cTerm <= Term)
+        {
+            candidate.ReceiveVote(false);
+        }
+        else
+        {
+            HasVoted = true;
+            Vote = cId;
+            candidate.ReceiveVote(true);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public void RequestVotesRPC()
+    {
+        foreach (INode n in Neighbors)
+        {
+            n.RequestVoteForRPC(Id, Term);
+        }
     }
 
     private void ResetElectionTimeout()
@@ -93,7 +129,7 @@ public class Node : INode
             IsRunning = true;
             while (IsRunning)
             {
-                if (State == NODE_STATE.LEADER)
+                if (State == NODESTATE.LEADER)
                 {
                     foreach (INode n in Neighbors)
                     {
@@ -101,8 +137,16 @@ public class Node : INode
                     }
                 }
 
-                if (State == NODE_STATE.FOLLOWER)
+                else
                 {
+                    if (State == NODESTATE.CANDIDATE)
+                    {
+                        if (VoteCount >= Majority)
+                        {
+                            State = NODESTATE.LEADER;
+                        }
+                    }
+
                     lock (TimeoutLock)
                     {
                         ElectionTimeout -= 10;
@@ -113,12 +157,11 @@ public class Node : INode
                         ResetElectionTimeout();
                         BecomeCandidate();
                     }
-
                 }
 
                 try
                 {
-                    Thread.Sleep(State == NODE_STATE.LEADER ? 50 : 10);
+                    Thread.Sleep(State == NODESTATE.LEADER ? 50 : 10);
                 }
                 catch (ThreadInterruptedException)
                 {

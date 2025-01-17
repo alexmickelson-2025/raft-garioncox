@@ -11,7 +11,7 @@ public class RaftTests1
     public void WhenLeaderActive_SendsHeartbeatWithin50ms()
     {
         // ARRANGE
-        Node leader = new(0) { State = NODE_STATE.LEADER };
+        Node leader = new(0) { State = NODESTATE.LEADER };
         var follower = Substitute.For<INode>();
         leader.Neighbors = [follower];
 
@@ -30,7 +30,7 @@ public class RaftTests1
     public void WhenLeaderActive_SendsHeartBeatEvery50ms()
     {
         // ARRANGE
-        Node leader = new(0) { State = NODE_STATE.LEADER };
+        Node leader = new(0) { State = NODESTATE.LEADER };
         var follower = Substitute.For<INode>();
         leader.Neighbors = [follower];
 
@@ -49,7 +49,7 @@ public class RaftTests1
     // Testing 2
     public void Cluster_WhenNodeReceivesAppendEntries_ThenRemembersOtherNodeIsCurrentLeader()
     {
-        Node leader = new(0) { State = NODE_STATE.LEADER };
+        Node leader = new(0) { State = NODESTATE.LEADER };
         Node follower = new(1);
         leader.Neighbors = [follower];
 
@@ -63,7 +63,7 @@ public class RaftTests1
     public void SingleNode_WhenInitialized_ShouldBeInFollowerState()
     {
         Node n = new(0);
-        Assert.Equal(NODE_STATE.FOLLOWER, n.State);
+        Assert.Equal(NODESTATE.FOLLOWER, n.State);
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public class RaftTests1
         t.Join();
 
         // ASSERT
-        Assert.Equal(NODE_STATE.CANDIDATE, n1.State);
+        Assert.Equal(NODESTATE.CANDIDATE, n1.State);
     }
 
     [Fact]
@@ -170,7 +170,7 @@ public class RaftTests1
         t.Join();
 
         // ASSERT
-        Assert.True(follower.State == NODE_STATE.FOLLOWER);
+        Assert.True(follower.State == NODESTATE.FOLLOWER);
     }
 
     [Fact]
@@ -179,7 +179,7 @@ public class RaftTests1
     {
         Node n = new(0);
         n.BecomeCandidate();
-        Assert.Equal(NODE_STATE.LEADER, n.State);
+        Assert.Equal(NODESTATE.LEADER, n.State);
     }
 
     [Fact]
@@ -198,7 +198,7 @@ public class RaftTests1
 
         n2.Received().RequestVoteFor(Arg.Any<int>(), Arg.Any<int>());
         n3.Received().RequestVoteFor(Arg.Any<int>(), Arg.Any<int>());
-        Assert.Equal(NODE_STATE.LEADER, n1.State);
+        Assert.Equal(NODESTATE.LEADER, n1.State);
     }
 
     [Fact]
@@ -212,6 +212,36 @@ public class RaftTests1
 
         Assert.Equal(candidate.Id, follower.Vote);
         Assert.True(follower.HasVoted);
+    }
+
+    [Fact]
+    // Testing 9
+    public void CandidateReceivesMajorityVotes_WhileWaitinForUnresponsiveNode_StillBecomesLeader()
+    {
+        Node candidate = new(0);
+        var n1 = Substitute.For<INode>();
+        var n2 = Substitute.For<INode>();
+
+        n2.When(n => n.RequestVoteFor(Arg.Any<int>(), Arg.Any<int>()))
+            .Do(x => candidate.ReceiveVote(true));
+
+
+        Thread t = candidate.Run();
+
+        Thread.Sleep(300);
+
+        candidate.Stop();
+        t.Join();
+
+        Assert.Equal(NODESTATE.LEADER, candidate.State);
+    }
+
+    [Fact]
+    // Testing 10
+    public void GivenAFollowerHasNotVoted_GivenItIsInAnEarlierTerm_WhenARequestRPCIsSent_ThenItRespondsYes()
+    {
+        Assert.False(true);
+        // A follower that has not voted and is in an earlier term responds to a RequestForVoteRPC with yes. (the reply will be a separate RPC)
     }
 
     [Fact]
@@ -238,11 +268,11 @@ public class RaftTests1
         Node n2 = new(1);
         n1.Term = 0;
         n2.Term = 1;
-        n1.State = NODE_STATE.CANDIDATE;
+        n1.State = NODESTATE.CANDIDATE;
 
         n1.AppendEntries(n2.Id, n2.Term);
 
-        Assert.Equal(NODE_STATE.FOLLOWER, n1.State);
+        Assert.Equal(NODESTATE.FOLLOWER, n1.State);
     }
 
     [Fact]
@@ -253,11 +283,11 @@ public class RaftTests1
         Node n2 = new(1);
         n1.Term = 0;
         n2.Term = 0;
-        n1.State = NODE_STATE.CANDIDATE;
+        n1.State = NODESTATE.CANDIDATE;
 
         n1.AppendEntries(n2.Id, n2.Term);
 
-        Assert.Equal(NODE_STATE.FOLLOWER, n1.State);
+        Assert.Equal(NODESTATE.FOLLOWER, n1.State);
     }
 
     [Fact]

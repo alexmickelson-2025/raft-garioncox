@@ -4,7 +4,7 @@ public class SimNode : INode
 {
     Node node;
 
-    public NODE_STATE State { get => ((INode)node).State; set => ((INode)node).State = value; }
+    public NODESTATE State { get => ((INode)node).State; set => ((INode)node).State = value; }
     public bool HasVoted { get => ((INode)node).HasVoted; set => ((INode)node).HasVoted = value; }
 
     public int Id => ((INode)node).Id;
