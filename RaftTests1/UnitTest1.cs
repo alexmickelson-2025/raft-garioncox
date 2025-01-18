@@ -181,6 +181,7 @@ public class RaftTests1
         Node n = new(0);
         n.BecomeCandidate();
         Assert.Equal(NODESTATE.LEADER, n.State);
+        Assert.Equal(n.Id, n.CurrentLeader);
     }
 
     [Fact]
@@ -408,8 +409,7 @@ public class RaftTests1
         n1.When(n => n.RequestVoteForRPC(Arg.Any<int>(), Arg.Any<int>()))
             .Do(n => candidate.ReceiveVote(true));
 
-        Thread t = candidate.Run();
-        Thread.Sleep(20);
+        candidate.BecomeLeader();
 
         n1.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>());
     }

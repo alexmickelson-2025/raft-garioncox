@@ -2,6 +2,7 @@ using raft_garioncox;
 
 public interface INode
 {
+    int TimeoutRate { get; set; }
     int? CurrentLeader { get; set; }
     int ElectionTimeout { get; set; } // in ms
     int Id { get; set; }

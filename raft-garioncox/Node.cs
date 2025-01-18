@@ -12,6 +12,7 @@ public class Node : INode
     public INode[] Neighbors { get; set; } = [];
     public int Term { get; set; } = 0;
     private readonly object TimeoutLock = new();
+    public int TimeoutRate { get; set; } = 10;
     private object VoteCountLock = new();
     private int VoteCount = 0;
     public int? Vote { get; set; } = null;
@@ -59,7 +60,17 @@ public class Node : INode
 
         if (tally >= Majority)
         {
-            State = NODESTATE.LEADER;
+            BecomeLeader();
+        }
+    }
+
+    public void BecomeLeader()
+    {
+        State = NODESTATE.LEADER;
+        CurrentLeader = Id;
+        foreach (INode n in Neighbors)
+        {
+            n.AppendEntries(Id, Term);
         }
     }
 
@@ -145,7 +156,7 @@ public class Node : INode
 
                     lock (TimeoutLock)
                     {
-                        ElectionTimeout -= 10;
+                        ElectionTimeout -= TimeoutRate;
                     }
 
                     if (ElectionTimeout <= 0)
@@ -157,7 +168,7 @@ public class Node : INode
 
                 try
                 {
-                    Thread.Sleep(State == NODESTATE.LEADER ? 50 : 10);
+                    Thread.Sleep(State == NODESTATE.LEADER ? 50 : TimeoutRate);
                 }
                 catch (ThreadInterruptedException)
                 {

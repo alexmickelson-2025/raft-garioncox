@@ -11,6 +11,7 @@ public class SimNode : INode
     public int? Vote { get => ((INode)node).Vote; set => ((INode)node).Vote = value; }
     public int ElectionTimeout { get => ((INode)node).ElectionTimeout; set => ((INode)node).ElectionTimeout = value; }
     public int? CurrentLeader { get => ((INode)node).CurrentLeader; set => ((INode)node).CurrentLeader = value; }
+    public int TimeoutRate { get => ((INode)node).TimeoutRate; set => ((INode)node).TimeoutRate = value; }
 
     public SimNode(Node n)
     {
