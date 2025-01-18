@@ -4,9 +4,10 @@
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>RAFT Sim</h1>
+<p>Garion Cox</p>
 
-@* <button @onclick="startSimulation" class="btn btn-primary">Start</button> *@
+<hr>
 
 <div class="row p-3 col-12">
     @foreach (var n in nodes)
@@ -14,37 +15,40 @@
         var timeoutRemaining = n.ElectionTimeout;
         var maxIntervalMilliseconds = 300.0;
         var percentageRemaining = (int)(100 * (Math.Abs(n.ElectionTimeout) / maxIntervalMilliseconds));
-        <div class="col border border-danger p-3 m-2 rounded-3">
+        <div class="col border border-@(n.State == NODESTATE.LEADER ? "danger" : "success")-subtle p-3 m-2 rounded-3">
             <div class="d-flex flex-column">
-            <div>@(((n.State).ToString().ToLower()))-@n.Id</div>
-                <div></div>
-                <div>term @n.Term</div>
-                <div>leader @((n.CurrentLeader != null) ? n.CurrentLeader : "No leader")</div>
+                <div>(#@n.Id) [@(((n.State).ToString().ToLower()))]</div>
+                <div>Term @n.Term</div>
+                <div>Following: @((n.CurrentLeader != null) ? n.CurrentLeader : "No leader")</div>
             </div>
             <div>
-                @n.ElectionTimeout
+                @n.ElectionTimeout ms
                 <div class="progress" role="progressbar" aria-label="Basic example"
                     aria-valuenow="@(Math.Abs(timeoutRemaining))" aria-valuemin="0"
                     aria-valuemax="@(maxIntervalMilliseconds)">
-                <div class="progress-bar bg-success-subtle" style="width: @percentageRemaining%;"></div>
+                    <div class="progress-bar bg-success-subtle" style="width: @percentageRemaining%;"></div>
                 </div>
             </div>
         </div>
     }
 </div>
 
-<div>
+<div class="row p-3 col-4">
     <label for="NetworkDelay" class="form-label">Network Delay: @NetworkDelay</label>
-    <input type="range" class="form-range" id="NetworkDelay" @bind=NetworkDelay>
+    <input type="range" class="form-range" id="NetworkDelay" value=0 @onchange='HandleNetworkDelayChange'>
 
     <label for="TimeoutMultiplier" class="form-label">Timeout Multiplier: @TimeoutMultiplier</label>
-    <input type="range" class="form-range" id="TimeoutMultiplier" @bind=TimeoutMultiplier>
+    <input type="range" class="form-range" min=1 max=10 value=1 id="TimeoutMultiplier"
+        @onchange='HandleTimeoutMultiplierChange'>
 </div>
+
+<button @onclick="Start" class="btn btn-primary">Start</button>
+<button @onclick="Stop" class="btn btn-danger">Stop</button>
 
 @code {
     List<SimNode> nodes = [];
-    int NetworkDelay = 0;
     int TimeoutMultiplier = 1;
+    int NetworkDelay = 0;
     public required Timer timer;
 
     protected override void OnInitialized()
@@ -64,13 +68,47 @@
         nodes = [sim1, sim2, sim3];
         StateHasChanged();
 
-        sim1.Run();
-        sim2.Run();
-        sim3.Run();
-
         timer = new(_ =>
         {
             InvokeAsync(StateHasChanged);
         }, null, 0, 200);
+    }
+
+    public void Start()
+    {
+        foreach (INode node in nodes)
+        {
+            node.Run();
+        }
+    }
+
+    public void Stop()
+    {
+        foreach (INode node in nodes)
+        {
+            node.Stop();
+        }
+    }
+
+    public void HandleNetworkDelayChange(ChangeEventArgs e)
+    {
+        int delay = Convert.ToInt32(e.Value);
+        NetworkDelay = delay;
+        foreach (SimNode node in nodes)
+        {
+            node.NetworkDelay = delay;
+        }
+        StateHasChanged();
+    }
+
+    public void HandleTimeoutMultiplierChange(ChangeEventArgs e)
+    {
+        int multiplier = Convert.ToInt32(e.Value);
+        TimeoutMultiplier = multiplier;
+        foreach (SimNode node in nodes)
+        {
+            node.TimeoutRate = multiplier;
+        }
+        StateHasChanged();
     }
 }

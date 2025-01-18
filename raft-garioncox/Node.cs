@@ -29,6 +29,7 @@ public class Node : INode
         {
             State = NODESTATE.FOLLOWER;
             CurrentLeader = leaderId;
+            Term = leaderTerm;
             ResetElectionTimeout();
             return true;
         }

@@ -18,4 +18,5 @@ public interface INode
     public Task RequestVoteForRPC(int cId, int cTerm);
     public void RequestVotesRPC();
     public Thread Run();
+    public void Stop();
 }

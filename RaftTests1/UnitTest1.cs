@@ -413,4 +413,20 @@ public class RaftTests1
 
         n1.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>());
     }
+
+    [Fact]
+    public void WhenFollowerReceivesHeartbeatFromLeader_ItUpdatesItsTermToMatchLeader()
+    {
+        Node follower = new(0);
+        var leader = Substitute.For<INode>();
+        leader.Term.Returns(2);
+        leader.Id.Returns(1);
+
+        follower.CurrentLeader = 1;
+        follower.Neighbors = [leader];
+
+        follower.AppendEntries(leader.Id, leader.Term);
+
+        Assert.Equal(leader.Term, follower.Term);
+    }
 }

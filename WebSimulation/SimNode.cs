@@ -12,6 +12,7 @@ public class SimNode : INode
     public int ElectionTimeout { get => ((INode)node).ElectionTimeout; set => ((INode)node).ElectionTimeout = value; }
     public int? CurrentLeader { get => ((INode)node).CurrentLeader; set => ((INode)node).CurrentLeader = value; }
     public int TimeoutRate { get => ((INode)node).TimeoutRate; set => ((INode)node).TimeoutRate = value; }
+    public int NetworkDelay { get; set; } = 0;
 
     public SimNode(Node n)
     {
@@ -20,6 +21,7 @@ public class SimNode : INode
 
     public bool AppendEntries(int id, int term)
     {
+        Thread.Sleep(NetworkDelay);
         return ((INode)node).AppendEntries(id, term);
     }
 
@@ -40,6 +42,7 @@ public class SimNode : INode
 
     public Task RequestVoteForRPC(int cId, int cTerm)
     {
+        Thread.Sleep(NetworkDelay);
         return ((INode)node).RequestVoteForRPC(cId, cTerm);
     }
 
@@ -51,5 +54,10 @@ public class SimNode : INode
     public Thread Run()
     {
         return ((INode)node).Run();
+    }
+
+    public void Stop()
+    {
+        ((INode)node).Stop();
     }
 }
