@@ -11,8 +11,8 @@ public class ReplciationTests
 {
     [Fact]
     // Testing 1
-    public void Test()
+    public void WhenLeaderReceivesCommandRequest_ItAppendsAnEntryToItsLog()
     {
-        Assert.True(true);
+        throw new NotImplementedException();
     }
 }
