@@ -5,9 +5,9 @@ using NSubstitute;
 using NSubstitute.Core.Arguments;
 using raft_garioncox;
 
-namespace RaftTests1;
+namespace RaftSimulationTests;
 
-public class RaftTests1
+public class SimTests
 {
     [Fact]
     // Testing 1

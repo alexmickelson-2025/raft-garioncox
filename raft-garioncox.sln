@@ -5,7 +5,7 @@ VisualStudioVersion = 17.12.35527.113
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "raft-garioncox", "raft-garioncox\raft-garioncox.csproj", "{CDC7FCD9-9F28-4F07-AAB4-8A41C0CB3E05}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaftTests1", "RaftTests1\RaftTests1.csproj", "{C113D1F0-65DE-4906-8BEB-0F8A096ED4EC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaftSimulationTests", "RaftSimulationTests\RaftSimulationTests.csproj", "{C113D1F0-65DE-4906-8BEB-0F8A096ED4EC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSimulation", "WebSimulation\WebSimulation.csproj", "{7C09A8FD-22BA-4DCB-B7F0-F47298ED4DA6}"
 EndProject
