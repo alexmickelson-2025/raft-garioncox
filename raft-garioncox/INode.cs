@@ -8,7 +8,7 @@ public interface INode
     List<Entry> Entries { get; set; }
     int Id { get; set; }
     bool HasVoted { get; set; }
-    INode[] Neighbors { get; set; }
+    Dictionary<int, INode> Neighbors { get; set; }
     NODESTATE State { get; set; }
     int Term { get; set; }
     int? Vote { get; set; }

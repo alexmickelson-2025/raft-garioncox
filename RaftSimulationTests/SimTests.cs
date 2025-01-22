@@ -10,9 +10,15 @@ public class SimTests
     public void WhenLeaderActive_SendsHeartbeatWithin50ms()
     {
         // ARRANGE
-        Node leader = new(0) { State = NODESTATE.LEADER };
         var follower = Substitute.For<INode>();
-        leader.Neighbors = [follower];
+        Node leader = new(0)
+        {
+            State = NODESTATE.LEADER,
+            Neighbors = new Dictionary<int, INode>
+            {
+                { 1, follower },
+            }
+        };
 
         // ACT
         Thread t = leader.Run();
@@ -29,9 +35,15 @@ public class SimTests
     public void WhenLeaderActive_SendsHeartBeatEvery50ms()
     {
         // ARRANGE
-        Node leader = new(0) { State = NODESTATE.LEADER };
         var follower = Substitute.For<INode>();
-        leader.Neighbors = [follower];
+        Node leader = new(0)
+        {
+            State = NODESTATE.LEADER,
+            Neighbors = new Dictionary<int, INode>
+            {
+                { 1, follower },
+            }
+        };
 
         // ACT
         Thread t = leader.Run();
@@ -52,7 +64,7 @@ public class SimTests
         leader.State.Returns(NODESTATE.LEADER);
         leader.Id.Returns(1);
         Node follower = new(1);
-        leader.Neighbors = [follower];
+        leader.Neighbors = new Dictionary<int, INode> { { 1, follower }, };
 
         follower.AppendEntries(leader.Id, leader.Term);
 
@@ -77,7 +89,11 @@ public class SimTests
         n2.RequestVoteFor(Arg.Any<int>(), Arg.Any<int>()).Returns(false);
         n3.RequestVoteFor(Arg.Any<int>(), Arg.Any<int>()).Returns(false);
         n1.ElectionTimeout = 10;
-        n1.Neighbors = [n2, n3];
+        n1.Neighbors = new Dictionary<int, INode>
+            {
+                { 1, n2 },
+                { 2, n3 }
+            };
 
         // ACT
         Thread t = n1.Run();
@@ -155,13 +171,19 @@ public class SimTests
     public void WhenFollowerGetsAppendEntriesMessage_ItResetsElectionTimer()
     {
         // ARRANGE
-        Node follower = new(0);
         var leader = Substitute.For<INode>();
-        var n2 = Substitute.For<INode>();
-
         leader.Id.Returns(0);
-        leader.Id.Returns(1);
-        follower.Neighbors = [leader, n2];
+        var n2 = Substitute.For<INode>();
+        n2.Id.Returns(1);
+        Node follower = new(0)
+        {
+            Neighbors = new Dictionary<int, INode>()
+            {
+                { leader.Id, leader },
+                { n2.Id, n2 },
+            }
+        };
+
 
         // ACT
         bool worked = follower.AppendEntries(leader.Id, leader.Term);
@@ -184,10 +206,16 @@ public class SimTests
     // Testing 8
     public void Cluster_WhenOneBecomesCandidate_ShouldBecomeLeader()
     {
-        Node n1 = new(0);
         var n2 = Substitute.For<INode>();
         var n3 = Substitute.For<INode>();
-        n1.Neighbors = [n2, n3];
+        Node n1 = new(0)
+        {
+            Neighbors = new Dictionary<int, INode>()
+            {
+                { 1, n2 },
+                { 2, n3 },
+            }
+        };
 
         n2.RequestVoteFor(Arg.Any<int>(), Arg.Any<int>()).Returns(true);
         n3.RequestVoteFor(Arg.Any<int>(), Arg.Any<int>()).Returns(true);
@@ -202,11 +230,16 @@ public class SimTests
     [Fact]
     public void NodeVotesForCandidate_WhenVoteRequested()
     {
-        Node follower = new(0);
         var candidate = Substitute.For<INode>();
         candidate.Id.Returns(1);
         candidate.Term.Returns(0);
-        follower.Neighbors = [candidate];
+        Node follower = new(0)
+        {
+            Neighbors = new Dictionary<int, INode>()
+            {
+                { candidate.Id, candidate },
+            }
+        };
 
         follower.RequestVoteFor(candidate.Id, candidate.Term);
 
@@ -251,7 +284,10 @@ public class SimTests
         {
             Term = 0,
             HasVoted = false,
-            Neighbors = [candidate]
+            Neighbors = new Dictionary<int, INode>()
+            {
+                { candidate.Id, candidate },
+            }
         };
 
         follower.RequestVoteForRPC(candidate.Id, candidate.Term);
@@ -351,7 +387,11 @@ public class SimTests
         {
             Term = 1,
             State = NODESTATE.CANDIDATE,
-            Neighbors = [n1, n2],
+            Neighbors = new Dictionary<int, INode>()
+                {
+                    {1, n1},
+                    {2, n2}
+                },
             ElectionTimeout = 10
         };
 
@@ -399,7 +439,10 @@ public class SimTests
         Node candidate = new(0)
         {
             ElectionTimeout = 10,
-            Neighbors = [n1]
+            Neighbors = new Dictionary<int, INode>()
+                {
+                    {1, n1}
+                }
         };
 
         n1.When(n => n.RequestVoteForRPC(Arg.Any<int>(), Arg.Any<int>()))
@@ -419,7 +462,10 @@ public class SimTests
         leader.Id.Returns(1);
 
         follower.CurrentLeader = 1;
-        follower.Neighbors = [leader];
+        follower.Neighbors = new Dictionary<int, INode>()
+            {
+                {leader.Id, leader}
+            };
 
         follower.AppendEntries(leader.Id, leader.Term);
 
