@@ -5,6 +5,7 @@ public interface INode
     int TimeoutRate { get; set; }
     int? CurrentLeader { get; set; }
     int ElectionTimeout { get; set; } // in ms
+    List<Entry> Entries { get; set; }
     int Id { get; set; }
     bool HasVoted { get; set; }
     INode[] Neighbors { get; set; }
@@ -13,6 +14,7 @@ public interface INode
     int? Vote { get; set; }
     public bool AppendEntries(int id, int term);
     public void BecomeCandidate();
+    public void ReceiveClientCommand(string command);
     public void ReceiveVote(bool vote);
     public bool RequestVoteFor(int id, int term);
     public Task RequestVoteForRPC(int cId, int cTerm);

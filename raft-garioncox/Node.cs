@@ -6,6 +6,7 @@ public class Node : INode
     public int Id { get; set; }
     public int? CurrentLeader { get; set; } = null;
     public int ElectionTimeout { get; set; } = 300; // in ms
+    public List<Entry> Entries { get; set; } = [];
     public bool HasVoted { get; set; } = false;
     public bool IsRunning = false;
     private int Majority => (int)Math.Ceiling((Neighbors.Length + 1.0) / 2);
@@ -73,6 +74,12 @@ public class Node : INode
         {
             n.AppendEntries(Id, Term);
         }
+    }
+
+    public void ReceiveClientCommand(string command)
+    {
+        Entry e = new(Term, command);
+        Entries.Add(e);
     }
 
     public void ReceiveVote(bool vote)
