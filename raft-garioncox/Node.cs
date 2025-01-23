@@ -4,6 +4,7 @@ public class Node : INode
 {
     public NODESTATE State { get; set; } = NODESTATE.FOLLOWER;
     public int Id { get; set; }
+    public int CommitedLogIndex = 0;
     public int? CurrentLeader { get; set; } = null;
     public int ElectionTimeout { get; set; } = 300; // in ms
     public List<Entry> Entries { get; set; } = [];
@@ -58,6 +59,11 @@ public class Node : INode
             Neighbors[key].AppendEntries(Id, Term);
             NextIndexes[key] = Entries.Count + 1;
         }
+    }
+
+    public void CommitEntry()
+    {
+        CommitedLogIndex++;
     }
 
     public void Heartbeat()
@@ -203,47 +209,6 @@ public class Node : INode
                     IsRunning = false;
                 }
             }
-            // while (IsRunning)
-            // {
-            //     if (State == NODESTATE.LEADER)
-            //     {
-            //         foreach (INode node in Neighbors.Values)
-            //         {
-            //             node.AppendEntries(Id, Term);
-            //         }
-            //     }
-
-            //     else
-            //     {
-            //         if (State == NODESTATE.CANDIDATE)
-            //         {
-            //             if (VoteCount >= Majority)
-            //             {
-            //                 State = NODESTATE.LEADER;
-            //             }
-            //         }
-
-            //         lock (TimeoutLock)
-            //         {
-            //             ElectionTimeout -= TimeoutRate;
-            //         }
-
-            //         if (ElectionTimeout <= 0)
-            //         {
-            //             ResetElectionTimeout();
-            //             BecomeCandidate();
-            //         }
-            //     }
-
-            //     try
-            //     {
-            //         Thread.Sleep(State == NODESTATE.LEADER ? 50 : TimeoutRate);
-            //     }
-            //     catch (ThreadInterruptedException)
-            //     {
-            //         IsRunning = false;
-            //     }
-            // }
         });
 
         t.Start();

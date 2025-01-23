@@ -81,4 +81,18 @@ public class ReplciationTests
             Assert.Equal(node3.Entries.Count + 1, node3.NextIndexes[key]);
         }
     }
+
+    [Fact]
+    // Test 9
+    public void LeaderCommitsLogs_ByIncrementingCommitedLogIndex()
+    {
+        Node leader = new(0)
+        {
+            Entries = [new Entry(1, "name")]
+        };
+
+        leader.CommitEntry();
+
+        Assert.Equal(1, leader.CommitedLogIndex);
+    }
 }
