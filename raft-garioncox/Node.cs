@@ -14,7 +14,7 @@ public class Node : INode
     public Dictionary<int, int> NextIndexes { get; set; } = [];
     public int Term { get; set; } = 0;
     private readonly object TimeoutLock = new();
-    public int TimeoutRate { get; set; } = 10;
+    public int TimeoutRate { get; set; } = 1;
     private object VoteCountLock = new();
     private int VoteCount = 0;
     public int? Vote { get; set; } = null;
@@ -127,12 +127,19 @@ public class Node : INode
         }
     }
 
-    private void ResetElectionTimeout()
+    public void ResetElectionTimeout(bool isLeader = false)
     {
         Random r = new();
         lock (TimeoutLock)
         {
-            ElectionTimeout = r.Next(150, 301);
+            if (isLeader)
+            {
+                ElectionTimeout = 50;
+            }
+            else
+            {
+                ElectionTimeout = r.Next(150, 301);
+            }
         }
     }
 
@@ -146,11 +153,16 @@ public class Node : INode
             IsRunning = true;
             while (IsRunning)
             {
-                if (State == NODESTATE.LEADER)
+                if (State == NODESTATE.LEADER && ElectionTimeout <= 0)
                 {
                     foreach (INode node in Neighbors.Values)
                     {
                         node.AppendEntries(Id, Term);
+                    }
+
+                    if (ElectionTimeout <= 0)
+                    {
+                        ResetElectionTimeout(true);
                     }
                 }
 
@@ -164,11 +176,6 @@ public class Node : INode
                         }
                     }
 
-                    lock (TimeoutLock)
-                    {
-                        ElectionTimeout -= TimeoutRate;
-                    }
-
                     if (ElectionTimeout <= 0)
                     {
                         ResetElectionTimeout();
@@ -176,15 +183,61 @@ public class Node : INode
                     }
                 }
 
+                lock (TimeoutLock)
+                {
+                    ElectionTimeout -= TimeoutRate;
+                }
+
                 try
                 {
-                    Thread.Sleep(State == NODESTATE.LEADER ? 50 : TimeoutRate);
+                    Thread.Sleep(TimeoutRate);
                 }
                 catch (ThreadInterruptedException)
                 {
                     IsRunning = false;
                 }
             }
+            // while (IsRunning)
+            // {
+            //     if (State == NODESTATE.LEADER)
+            //     {
+            //         foreach (INode node in Neighbors.Values)
+            //         {
+            //             node.AppendEntries(Id, Term);
+            //         }
+            //     }
+
+            //     else
+            //     {
+            //         if (State == NODESTATE.CANDIDATE)
+            //         {
+            //             if (VoteCount >= Majority)
+            //             {
+            //                 State = NODESTATE.LEADER;
+            //             }
+            //         }
+
+            //         lock (TimeoutLock)
+            //         {
+            //             ElectionTimeout -= TimeoutRate;
+            //         }
+
+            //         if (ElectionTimeout <= 0)
+            //         {
+            //             ResetElectionTimeout();
+            //             BecomeCandidate();
+            //         }
+            //     }
+
+            //     try
+            //     {
+            //         Thread.Sleep(State == NODESTATE.LEADER ? 50 : TimeoutRate);
+            //     }
+            //     catch (ThreadInterruptedException)
+            //     {
+            //         IsRunning = false;
+            //     }
+            // }
         });
 
         t.Start();

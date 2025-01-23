@@ -1,4 +1,5 @@
 using System.Data;
+using System.Runtime.CompilerServices;
 using NSubstitute;
 using raft_garioncox;
 
@@ -6,8 +7,10 @@ namespace RaftSimulationTests;
 
 public class ReplciationTests
 {
+   
+
     [Fact]
-    // Testing 2
+    // Test 2
     public void WhenLeaderReceivesCommandFromClient_ItAppendsEntryToLog()
     {
         string command = DateTime.MaxValue.ToString();
@@ -22,7 +25,7 @@ public class ReplciationTests
     }
 
     [Fact]
-    // Testing 3
+    // Test 3
     public void WhenNodeIsCreated_ItsLogIsEmpty()
     {
         Node node = new(0);
@@ -30,7 +33,7 @@ public class ReplciationTests
     }
 
     [Fact]
-    // Testing 5
+    // Test 5
     public void WhenLeaderWinsElection_InitializesNextIndexForEachFollower()
     {
         var node1 = Substitute.For<INode>();

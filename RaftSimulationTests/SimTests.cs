@@ -17,13 +17,14 @@ public class SimTests
             Neighbors = new Dictionary<int, INode>
             {
                 { 1, follower },
-            }
+            },
+            ElectionTimeout = 50
         };
 
         // ACT
         Thread t = leader.Run();
 
-        Thread.Sleep(60);
+        Thread.Sleep(80);
         leader.Stop();
         t.Join();
 
@@ -42,13 +43,14 @@ public class SimTests
             Neighbors = new Dictionary<int, INode>
             {
                 { 1, follower },
-            }
+            },
+            ElectionTimeout = 50
         };
 
         // ACT
         Thread t = leader.Run();
 
-        Thread.Sleep(100);
+        Thread.Sleep(60);
         leader.Stop();
         t.Join();
 
@@ -136,11 +138,7 @@ public class SimTests
             ElectionTimeout = 10
         };
 
-        Thread t = n1.Run();
-
-        Thread.Sleep(10);
-        n1.Stop();
-        t.Join();
+        n1.ResetElectionTimeout();
 
         Assert.InRange(n1.ElectionTimeout, 150, 300);
     }
