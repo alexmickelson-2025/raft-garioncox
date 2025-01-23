@@ -154,4 +154,21 @@ public class ReplciationTests
 
         leader.Received(1).ReceiveAppendEntriesResponse(follower.Term, follower.CommittedLogIndex);
     }
+
+    [Fact]
+    // Test 14
+    public void WhenFollowerReceivesHeartbeat_ItMatchesCommitIndexOfHeartbeat()
+    {
+        var leader = Substitute.For<INode>();
+        leader.Id.Returns(1);
+        leader.CommittedLogIndex.Returns(3);
+        Node follower = new(0)
+        {
+            Neighbors = new Dictionary<int, INode> { { 1, leader }, }
+        };
+
+        follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
+
+        Assert.Equal(leader.CommittedLogIndex, follower.CommittedLogIndex);
+    }
 }

@@ -33,6 +33,7 @@ public class Node : INode
 
         State = NODESTATE.FOLLOWER;
         CurrentLeader = leaderId;
+        CommittedLogIndex = committedLogIndex;
         Term = leaderTerm;
 
         ResetElectionTimeout();
