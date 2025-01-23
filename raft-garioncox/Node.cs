@@ -28,16 +28,20 @@ public class Node : INode
 
     public bool AppendEntries(int leaderId, int leaderTerm, int committedLogIndex, Entry? entry = null)
     {
-        if (leaderTerm >= Term)
+        if (leaderId < Term) { return false; }
+
+        State = NODESTATE.FOLLOWER;
+        CurrentLeader = leaderId;
+        Term = leaderTerm;
+
+        ResetElectionTimeout();
+
+        if (entry != null)
         {
-            State = NODESTATE.FOLLOWER;
-            CurrentLeader = leaderId;
-            Term = leaderTerm;
-            ResetElectionTimeout();
-            return true;
+            Entries.Add(entry);
         }
 
-        return false;
+        return true;
     }
 
     public void BecomeCandidate()

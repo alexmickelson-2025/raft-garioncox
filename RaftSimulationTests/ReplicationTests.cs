@@ -116,4 +116,19 @@ public class ReplciationTests
 
         Assert.Equal(1, leader.CommittedLogIndex);
     }
+
+    [Fact]
+    // Test 10
+    public void GivenFollowerReceivesAppendEntriesWithLogs_ItAppendsItToItsPersonalLog()
+    {
+        Entry e = new(1, "commandstring");
+        var leader = Substitute.For<INode>();
+        leader.Id.Returns(1);
+        Node follower = new(0);
+
+        follower.AppendEntries(leader.Id, leader.Term, leader.ElectionTimeout, e);
+
+        Assert.NotEmpty(follower.Entries);
+        Assert.Equal(e, follower.Entries.First());
+    }
 }
