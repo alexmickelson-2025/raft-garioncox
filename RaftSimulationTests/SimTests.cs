@@ -29,7 +29,7 @@ public class SimTests
         t.Join();
 
         // ASSERT
-        follower.Received().AppendEntries(leader.Id, leader.Term);
+        follower.Received().AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class SimTests
         t.Join();
 
         // ASSERT
-        follower.Received().AppendEntries(leader.Id, leader.Term, null);
+        follower.Received().AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, null);
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public class SimTests
         Node follower = new(1);
         leader.Neighbors = new Dictionary<int, INode> { { 1, follower }, };
 
-        follower.AppendEntries(leader.Id, leader.Term);
+        follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
 
         Assert.Equal(leader.Id, follower.CurrentLeader);
     }
@@ -184,7 +184,7 @@ public class SimTests
 
 
         // ACT
-        bool worked = follower.AppendEntries(leader.Id, leader.Term);
+        bool worked = follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
 
         // ASSERT
         Assert.True(follower.State == NODESTATE.FOLLOWER);
@@ -317,11 +317,12 @@ public class SimTests
         var n2 = Substitute.For<INode>();
         n2.Term.Returns(1);
         n2.Id.Returns(1);
+        n2.CommittedLogIndex.Returns(0);
 
         n1.Term = 0;
         n1.State = NODESTATE.CANDIDATE;
 
-        n1.AppendEntries(n2.Id, n2.Term);
+        n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex);
 
         Assert.Equal(NODESTATE.FOLLOWER, n1.State);
     }
@@ -334,10 +335,11 @@ public class SimTests
         var n2 = Substitute.For<INode>();
         n2.Term.Returns(1);
         n2.Id.Returns(1);
+        n2.CommittedLogIndex.Returns(0);
         n1.Term = 0;
         n1.State = NODESTATE.CANDIDATE;
 
-        n1.AppendEntries(n2.Id, n2.Term);
+        n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex);
 
         Assert.Equal(NODESTATE.FOLLOWER, n1.State);
     }
@@ -410,7 +412,7 @@ public class SimTests
         Node n1 = new(0);
         INode n2 = Substitute.For<INode>();
 
-        bool response = n1.AppendEntries(n2.Id, n2.Term);
+        bool response = n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex);
 
         Assert.True(response);
     }
@@ -423,8 +425,9 @@ public class SimTests
         INode n2 = Substitute.For<INode>();
         n1.Term = 1;
         n2.Term = 0;
+        n2.CommittedLogIndex = 0;
 
-        bool response = n1.AppendEntries(n2.Id, n2.Term);
+        bool response = n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex);
 
         Assert.False(response);
     }
@@ -448,7 +451,7 @@ public class SimTests
 
         candidate.BecomeLeader();
 
-        n1.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>());
+        n1.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>());
     }
 
     [Fact]
@@ -458,6 +461,7 @@ public class SimTests
         var leader = Substitute.For<INode>();
         leader.Term.Returns(2);
         leader.Id.Returns(1);
+        leader.CommittedLogIndex.Returns(0);
 
         follower.CurrentLeader = 1;
         follower.Neighbors = new Dictionary<int, INode>()
@@ -465,7 +469,7 @@ public class SimTests
                 {leader.Id, leader}
             };
 
-        follower.AppendEntries(leader.Id, leader.Term);
+        follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
 
         Assert.Equal(leader.Term, follower.Term);
     }

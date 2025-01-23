@@ -33,7 +33,7 @@ public class ReplciationTests
         leader.Heartbeat();
 
         // ASSERT
-        node1.Received().AppendEntries(leader.Id, leader.Term, Arg.Any<Entry>());
+        node1.Received().AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, Arg.Any<Entry>());
     }
 
     [Fact]
@@ -83,8 +83,29 @@ public class ReplciationTests
     }
 
     [Fact]
+    // Test 6
+    public void HighestCommittedIndex_IncludedInLeaderAppendEntries()
+    {
+        Entry e = new(1, "commandstring");
+        var follower = Substitute.For<INode>();
+        Node leader = new(0)
+        {
+            Entries = [e],
+            CommittedLogIndex = 1,
+            Neighbors = new Dictionary<int, INode>
+            {
+                { 1, follower },
+            }
+        };
+
+        leader.Heartbeat();
+
+        follower.Received(1).AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, e);
+    }
+
+    [Fact]
     // Test 9
-    public void LeaderCommitsLogs_ByIncrementingCommitedLogIndex()
+    public void LeaderCommitsLogs_ByIncrementingCommittedLogIndex()
     {
         Node leader = new(0)
         {
@@ -93,6 +114,6 @@ public class ReplciationTests
 
         leader.CommitEntry();
 
-        Assert.Equal(1, leader.CommitedLogIndex);
+        Assert.Equal(1, leader.CommittedLogIndex);
     }
 }

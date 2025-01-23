@@ -4,7 +4,7 @@ public class Node : INode
 {
     public NODESTATE State { get; set; } = NODESTATE.FOLLOWER;
     public int Id { get; set; }
-    public int CommitedLogIndex = 0;
+    public int CommittedLogIndex { get; set; } = 0;
     public int? CurrentLeader { get; set; } = null;
     public int ElectionTimeout { get; set; } = 300; // in ms
     public List<Entry> Entries { get; set; } = [];
@@ -26,7 +26,7 @@ public class Node : INode
         ResetElectionTimeout();
     }
 
-    public bool AppendEntries(int leaderId, int leaderTerm, Entry? entry = null)
+    public bool AppendEntries(int leaderId, int leaderTerm, int committedLogIndex, Entry? entry = null)
     {
         if (leaderTerm >= Term)
         {
@@ -56,14 +56,14 @@ public class Node : INode
         CurrentLeader = Id;
         foreach (int key in Neighbors.Keys)
         {
-            Neighbors[key].AppendEntries(Id, Term);
+            Neighbors[key].AppendEntries(Id, Term, CommittedLogIndex);
             NextIndexes[key] = Entries.Count + 1;
         }
     }
 
     public void CommitEntry()
     {
-        CommitedLogIndex++;
+        CommittedLogIndex++;
     }
 
     public void Heartbeat()
@@ -71,7 +71,7 @@ public class Node : INode
         foreach (INode node in Neighbors.Values)
         {
             Entry? e = Entries.Count > 0 ? Entries.Last() : null;
-            node.AppendEntries(Id, Term, e);
+            node.AppendEntries(Id, Term, CommittedLogIndex, e);
         }
     }
 

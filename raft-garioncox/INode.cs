@@ -4,6 +4,7 @@ public interface INode
 {
     int TimeoutRate { get; set; }
     int? CurrentLeader { get; set; }
+    int CommittedLogIndex { get; set; }
     int ElectionTimeout { get; set; } // in ms
     List<Entry> Entries { get; set; }
     int Id { get; set; }
@@ -12,7 +13,7 @@ public interface INode
     NODESTATE State { get; set; }
     int Term { get; set; }
     int? Vote { get; set; }
-    public bool AppendEntries(int id, int term, Entry? entry = null);
+    public bool AppendEntries(int id, int term, int committedLogIndex, Entry? entry = null);
     public void BecomeCandidate();
     public void ReceiveClientCommand(string command);
     public void ReceiveVote(bool vote);
