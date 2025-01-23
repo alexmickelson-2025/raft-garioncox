@@ -12,7 +12,7 @@ public interface INode
     NODESTATE State { get; set; }
     int Term { get; set; }
     int? Vote { get; set; }
-    public bool AppendEntries(int id, int term);
+    public bool AppendEntries(int id, int term, Entry? entry = null);
     public void BecomeCandidate();
     public void ReceiveClientCommand(string command);
     public void ReceiveVote(bool vote);

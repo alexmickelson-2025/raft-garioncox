@@ -25,7 +25,7 @@ public class Node : INode
         ResetElectionTimeout();
     }
 
-    public bool AppendEntries(int leaderId, int leaderTerm)
+    public bool AppendEntries(int leaderId, int leaderTerm, Entry? entry = null)
     {
         if (leaderTerm >= Term)
         {
@@ -57,6 +57,15 @@ public class Node : INode
         {
             Neighbors[key].AppendEntries(Id, Term);
             NextIndexes[key] = Entries.Count + 1;
+        }
+    }
+
+    public void Heartbeat()
+    {
+        foreach (INode node in Neighbors.Values)
+        {
+            Entry? e = Entries.Count > 0 ? Entries.Last() : null;
+            node.AppendEntries(Id, Term, e);
         }
     }
 
@@ -155,10 +164,7 @@ public class Node : INode
             {
                 if (State == NODESTATE.LEADER && ElectionTimeout <= 0)
                 {
-                    foreach (INode node in Neighbors.Values)
-                    {
-                        node.AppendEntries(Id, Term);
-                    }
+                    Heartbeat();
 
                     if (ElectionTimeout <= 0)
                     {

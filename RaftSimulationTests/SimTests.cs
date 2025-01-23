@@ -55,7 +55,7 @@ public class SimTests
         t.Join();
 
         // ASSERT
-        follower.Received().AppendEntries(leader.Id, leader.Term);
+        follower.Received().AppendEntries(leader.Id, leader.Term, null);
     }
 
     [Fact]

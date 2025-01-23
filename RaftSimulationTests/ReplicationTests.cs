@@ -7,7 +7,34 @@ namespace RaftSimulationTests;
 
 public class ReplciationTests
 {
-   
+    [Fact]
+    // Test 1
+    public void WhenLeaderReceivesClientCommand_LeaderSendsLogInNextAppendRPC_ToAllNodes()
+    {
+        // ARRANGE
+        var node1 = Substitute.For<INode>();
+        node1.Id.Returns(1);
+
+        var node2 = Substitute.For<INode>();
+        node2.Id.Returns(2);
+
+        Node leader = new(0)
+        {
+            Neighbors = new Dictionary<int, INode>() {
+                {1, node1},
+                {2, node2}
+            }
+        };
+
+        string command = DateTime.MaxValue.ToString();
+
+        // ACT
+        leader.ReceiveClientCommand(command);
+        leader.Heartbeat();
+
+        // ASSERT
+        node1.Received().AppendEntries(leader.Id, leader.Term, Arg.Any<Entry>());
+    }
 
     [Fact]
     // Test 2
