@@ -124,11 +124,34 @@ public class ReplciationTests
         Entry e = new(1, "commandstring");
         var leader = Substitute.For<INode>();
         leader.Id.Returns(1);
-        Node follower = new(0);
+        Node follower = new(0)
+        {
+            Neighbors = new Dictionary<int, INode>() { { leader.Id, leader } }
+        };
 
         follower.AppendEntries(leader.Id, leader.Term, leader.ElectionTimeout, e);
 
         Assert.NotEmpty(follower.Entries);
         Assert.Equal(e, follower.Entries.First());
+    }
+
+    [Fact]
+    // Test 11
+    public void FollowerRespondsToAppendEntries_WithTermAndLogEntryIndex()
+    {
+        Entry e = new(1, "commandstring");
+        var leader = Substitute.For<INode>();
+        leader.Id.Returns(1);
+        Node follower = new(0)
+        {
+            Neighbors = new Dictionary<int, INode>
+            {
+                { 1, leader },
+            }
+        };
+
+        follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
+
+        leader.Received(1).ReceiveAppendEntriesResponse(follower.Term, follower.CommittedLogIndex);
     }
 }

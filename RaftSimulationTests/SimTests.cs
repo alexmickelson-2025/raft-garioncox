@@ -50,7 +50,7 @@ public class SimTests
         // ACT
         Thread t = leader.Run();
 
-        Thread.Sleep(60);
+        Thread.Sleep(80);
         leader.Stop();
         t.Join();
 
@@ -66,7 +66,7 @@ public class SimTests
         leader.State.Returns(NODESTATE.LEADER);
         leader.Id.Returns(1);
         Node follower = new(1);
-        leader.Neighbors = new Dictionary<int, INode> { { 1, follower }, };
+        follower.Neighbors = new Dictionary<int, INode> { { leader.Id, leader }, };
 
         follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
 
@@ -313,14 +313,19 @@ public class SimTests
     // Testing 12
     public void WhenCandidateReceivesMessageFromLaterTerm_BecomesFollower()
     {
-        Node n1 = new(0);
         var n2 = Substitute.For<INode>();
         n2.Term.Returns(1);
         n2.Id.Returns(1);
         n2.CommittedLogIndex.Returns(0);
-
-        n1.Term = 0;
-        n1.State = NODESTATE.CANDIDATE;
+        Node n1 = new(0)
+        {
+            Term = 0,
+            State = NODESTATE.CANDIDATE,
+            Neighbors = new Dictionary<int, INode>()
+            {
+                {n2.Id, n2}
+            }
+        };
 
         n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex);
 
@@ -331,13 +336,20 @@ public class SimTests
     // Testing 13
     public void WhenCandidateReceivesMessageFromEqualTerm_BecomesFollower()
     {
-        Node n1 = new(0);
         var n2 = Substitute.For<INode>();
         n2.Term.Returns(1);
         n2.Id.Returns(1);
         n2.CommittedLogIndex.Returns(0);
-        n1.Term = 0;
-        n1.State = NODESTATE.CANDIDATE;
+
+        Node n1 = new(0)
+        {
+            Term = 0,
+            State = NODESTATE.CANDIDATE,
+            Neighbors = new Dictionary<int, INode>()
+            {
+                {n2.Id, n2}
+            }
+        };
 
         n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex);
 
@@ -409,8 +421,14 @@ public class SimTests
     // Testing 17
     public void WhenFollowerReceivesAppendEntriesRequest_ItSendsResponse()
     {
-        Node n1 = new(0);
         INode n2 = Substitute.For<INode>();
+        n2.Id.Returns(1);
+        n2.Term.Returns(0);
+        n2.CommittedLogIndex.Returns(0);
+        Node n1 = new(0)
+        {
+            Neighbors = new() { { n2.Id, n2 } }
+        };
 
         bool response = n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex);
 
@@ -421,11 +439,14 @@ public class SimTests
     // Testing 18
     public void WhenFollowerReceivesAppendEntriesRequest_WithPreviousTerm_ItRejects()
     {
-        Node n1 = new(0);
         INode n2 = Substitute.For<INode>();
-        n1.Term = 1;
         n2.Term = 0;
         n2.CommittedLogIndex = 0;
+        Node n1 = new(0)
+        {
+            Term = 1,
+            Neighbors = new() { { n2.Id, n2 } }
+        };
 
         bool response = n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex);
 

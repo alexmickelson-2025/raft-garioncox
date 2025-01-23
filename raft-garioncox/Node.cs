@@ -28,7 +28,8 @@ public class Node : INode
 
     public bool AppendEntries(int leaderId, int leaderTerm, int committedLogIndex, Entry? entry = null)
     {
-        if (leaderId < Term) { return false; }
+        Neighbors[leaderId].ReceiveAppendEntriesResponse(Term, CommittedLogIndex);
+        if (leaderTerm < Term) { return false; }
 
         State = NODESTATE.FOLLOWER;
         CurrentLeader = leaderId;
@@ -42,6 +43,11 @@ public class Node : INode
         }
 
         return true;
+    }
+
+    public void ReceiveAppendEntriesResponse(int followerTerm, int followerEntryIndex)
+    {
+        throw new NotImplementedException();
     }
 
     public void BecomeCandidate()
