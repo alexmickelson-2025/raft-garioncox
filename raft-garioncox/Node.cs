@@ -46,7 +46,7 @@ public class Node : INode
         await Task.CompletedTask;
     }
 
-    public void ReceiveAppendEntriesResponse(int followerTerm, int followerEntryIndex, bool response)
+    public async Task ReceiveAppendEntriesResponse(int followerTerm, int followerEntryIndex, bool response)
     {
         throw new NotImplementedException();
     }
