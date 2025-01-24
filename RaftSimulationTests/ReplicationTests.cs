@@ -1,6 +1,8 @@
 using System.Data;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using NSubstitute;
+using NSubstitute.Core.Arguments;
 using raft_garioncox;
 
 namespace RaftSimulationTests;
@@ -119,7 +121,7 @@ public class ReplciationTests
 
     [Fact]
     // Test 10
-    public void GivenFollowerReceivesAppendEntriesWithLogs_ItAppendsItToItsPersonalLog()
+    public async Task GivenFollowerReceivesAppendEntriesWithLogs_ItAppendsItToItsPersonalLog()
     {
         Entry e = new(1, "commandstring");
         var leader = Substitute.For<INode>();
@@ -129,7 +131,7 @@ public class ReplciationTests
             Neighbors = new Dictionary<int, INode>() { { leader.Id, leader } }
         };
 
-        follower.AppendEntries(leader.Id, leader.Term, leader.ElectionTimeout, e);
+        await follower.AppendEntries(leader.Id, leader.Term, leader.ElectionTimeout, e);
 
         Assert.NotEmpty(follower.Entries);
         Assert.Equal(e, follower.Entries.First());
@@ -137,7 +139,7 @@ public class ReplciationTests
 
     [Fact]
     // Test 11
-    public void FollowerRespondsToAppendEntries_WithTermAndLogEntryIndex()
+    public async Task FollowerRespondsToAppendEntries_WithTermAndLogEntryIndex()
     {
         Entry e = new(1, "commandstring");
         var leader = Substitute.For<INode>();
@@ -150,14 +152,14 @@ public class ReplciationTests
             }
         };
 
-        follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
+        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
 
-        leader.Received(1).ReceiveAppendEntriesResponse(follower.Term, follower.CommittedLogIndex);
+        leader.Received(1).ReceiveAppendEntriesResponse(follower.Term, follower.CommittedLogIndex, Arg.Any<bool>());
     }
 
     [Fact]
     // Test 14
-    public void WhenFollowerReceivesHeartbeat_ItMatchesCommitIndexOfHeartbeat()
+    public async Task WhenFollowerReceivesHeartbeat_ItMatchesCommitIndexOfHeartbeat()
     {
         var leader = Substitute.For<INode>();
         leader.Id.Returns(1);
@@ -167,7 +169,7 @@ public class ReplciationTests
             Neighbors = new Dictionary<int, INode> { { 1, leader }, }
         };
 
-        follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
+        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
 
         Assert.Equal(leader.CommittedLogIndex, follower.CommittedLogIndex);
     }

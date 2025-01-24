@@ -13,9 +13,9 @@ public interface INode
     NODESTATE State { get; set; }
     int Term { get; set; }
     int? Vote { get; set; }
-    public bool AppendEntries(int id, int term, int committedLogIndex, Entry? entry = null);
+    public Task AppendEntries(int id, int term, int committedLogIndex, Entry? entry = null);
     public void BecomeCandidate();
-    public void ReceiveAppendEntriesResponse(int followerTerm, int followerEntryIndex);
+    public void ReceiveAppendEntriesResponse(int followerTerm, int followerEntryIndex, bool response);
     public void ReceiveClientCommand(string command);
     public void ReceiveVote(bool vote);
     public bool RequestVoteFor(int id, int term);

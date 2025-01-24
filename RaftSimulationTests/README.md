@@ -8,7 +8,7 @@
 8)  [] when the leader has received a majority confirmation of a log, it commits it
 9)  [x] the leader commits logs by incrementing its committed log index
 10) [x] given a follower receives an appendentries with log(s) it will add those entries to its personal log
-11) [x] a followers response to an appendentries includes the followers term number and log entry index
+11) [x] a followers response to an appendentries includes the followers term number and a boolean //log entry index
 12) [] when a leader receives a majority responses from the clients after a log replication heartbeat, the leader sends a confirmation response to the client
 13) [] given a leader node, when a log is committed, it applies it to its internal state machine
 14) [x] when a follower receives a heartbeat, it increases its commitIndex to match the commit index of the heartbeat

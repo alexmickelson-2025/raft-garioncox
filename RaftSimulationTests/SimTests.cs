@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using NSubstitute;
 using raft_garioncox;
 
@@ -24,7 +26,7 @@ public class SimTests
         // ACT
         Thread t = leader.Run();
 
-        Thread.Sleep(80);
+        Thread.Sleep(150);
         leader.Stop();
         t.Join();
 
@@ -33,7 +35,7 @@ public class SimTests
     }
 
     [Fact]
-    public void WhenLeaderActive_SendsHeartBeatEvery50ms()
+    public async Task WhenLeaderActive_SendsHeartBeatEvery50ms()
     {
         // ARRANGE
         var follower = Substitute.For<INode>();
@@ -50,12 +52,12 @@ public class SimTests
         // ACT
         Thread t = leader.Run();
 
-        Thread.Sleep(80);
+        Thread.Sleep(150);
         leader.Stop();
         t.Join();
 
         // ASSERT
-        follower.Received().AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, null);
+        await follower.Received().AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, null);
     }
 
     [Fact]
@@ -88,9 +90,7 @@ public class SimTests
         Node n1 = new(0);
         var n2 = Substitute.For<INode>();
         var n3 = Substitute.For<INode>();
-        n2.RequestVoteFor(Arg.Any<int>(), Arg.Any<int>()).Returns(false);
-        n3.RequestVoteFor(Arg.Any<int>(), Arg.Any<int>()).Returns(false);
-        n1.ElectionTimeout = 10;
+        n1.ElectionTimeout = 80;
         n1.Neighbors = new Dictionary<int, INode>
             {
                 { 1, n2 },
@@ -100,11 +100,12 @@ public class SimTests
         // ACT
         Thread t = n1.Run();
 
-        Thread.Sleep(20);
+        Thread.Sleep(150);
         n1.Stop();
         t.Join();
 
         // ASSERT
+        Assert.Equal(1, n1.Term);
         Assert.Equal(NODESTATE.CANDIDATE, n1.State);
     }
 
@@ -166,7 +167,7 @@ public class SimTests
 
     [Fact]
     // Testing 7
-    public void WhenFollowerGetsAppendEntriesMessage_ItResetsElectionTimer()
+    public async Task WhenFollowerGetsAppendEntriesMessage_ItResetsElectionTimer()
     {
         // ARRANGE
         var leader = Substitute.For<INode>();
@@ -184,7 +185,7 @@ public class SimTests
 
 
         // ACT
-        bool worked = follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
+        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
 
         // ASSERT
         Assert.True(follower.State == NODESTATE.FOLLOWER);
@@ -419,38 +420,37 @@ public class SimTests
 
     [Fact]
     // Testing 17
-    public void WhenFollowerReceivesAppendEntriesRequest_ItSendsResponse()
+    public async Task WhenFollowerReceivesAppendEntriesRequest_ItSendsResponse()
     {
-        INode n2 = Substitute.For<INode>();
-        n2.Id.Returns(1);
-        n2.Term.Returns(0);
-        n2.CommittedLogIndex.Returns(0);
+        INode mockNode = Substitute.For<INode>();
+        mockNode.Id.Returns(1);
+        mockNode.Term.Returns(0);
+        mockNode.CommittedLogIndex.Returns(0);
         Node n1 = new(0)
         {
-            Neighbors = new() { { n2.Id, n2 } }
+            Neighbors = new() { { mockNode.Id, mockNode } }
         };
 
-        bool response = n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex);
-
-        Assert.True(response);
+        await n1.AppendEntries(mockNode.Id, mockNode.Term, mockNode.CommittedLogIndex);
+        mockNode.Received().ReceiveAppendEntriesResponse(n1.Term, n1.CommittedLogIndex, Arg.Any<bool>());
     }
 
     [Fact]
     // Testing 18
-    public void WhenFollowerReceivesAppendEntriesRequest_WithPreviousTerm_ItRejects()
+    public async Task WhenFollowerReceivesAppendEntriesRequest_WithPreviousTerm_ItRejects()
     {
-        INode n2 = Substitute.For<INode>();
-        n2.Term = 0;
-        n2.CommittedLogIndex = 0;
+        INode mockLeader = Substitute.For<INode>();
+        mockLeader.Term = 0;
+        mockLeader.CommittedLogIndex = 0;
         Node n1 = new(0)
         {
             Term = 1,
-            Neighbors = new() { { n2.Id, n2 } }
+            Neighbors = new() { { mockLeader.Id, mockLeader } }
         };
 
-        bool response = n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex);
+        await n1.AppendEntries(mockLeader.Id, mockLeader.Term, mockLeader.CommittedLogIndex);
 
-        Assert.False(response);
+        mockLeader.Received().ReceiveAppendEntriesResponse(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<bool>());
     }
 
     [Fact]

@@ -15,7 +15,7 @@ public class Node : INode
     public Dictionary<int, int> NextIndexes { get; set; } = [];
     public int Term { get; set; } = 0;
     private readonly object TimeoutLock = new();
-    public int TimeoutRate { get; set; } = 1;
+    public int TimeoutRate { get; set; } = 10;
     private object VoteCountLock = new();
     private int VoteCount = 0;
     public int? Vote { get; set; } = null;
@@ -26,10 +26,10 @@ public class Node : INode
         ResetElectionTimeout();
     }
 
-    public bool AppendEntries(int leaderId, int leaderTerm, int committedLogIndex, Entry? entry = null)
+    public async Task AppendEntries(int leaderId, int leaderTerm, int committedLogIndex, Entry? entry = null)
     {
-        Neighbors[leaderId].ReceiveAppendEntriesResponse(Term, CommittedLogIndex);
-        if (leaderTerm < Term) { return false; }
+        Neighbors[leaderId].ReceiveAppendEntriesResponse(Term, CommittedLogIndex, true);
+        if (leaderTerm < Term) { return; }
 
         State = NODESTATE.FOLLOWER;
         CurrentLeader = leaderId;
@@ -43,10 +43,10 @@ public class Node : INode
             Entries.Add(entry);
         }
 
-        return true;
+        await Task.CompletedTask;
     }
 
-    public void ReceiveAppendEntriesResponse(int followerTerm, int followerEntryIndex)
+    public void ReceiveAppendEntriesResponse(int followerTerm, int followerEntryIndex, bool response)
     {
         throw new NotImplementedException();
     }
@@ -77,13 +77,14 @@ public class Node : INode
         CommittedLogIndex++;
     }
 
-    public void Heartbeat()
+    public Task Heartbeat()
     {
-        foreach (INode node in Neighbors.Values)
+        Neighbors.Values.Select(async node =>
         {
             Entry? e = Entries.Count > 0 ? Entries.Last() : null;
-            node.AppendEntries(Id, Term, CommittedLogIndex, e);
-        }
+            await node.AppendEntries(Id, Term, CommittedLogIndex, e);
+        }).ToArray();
+        return Task.CompletedTask;
     }
 
     public void ReceiveClientCommand(string command)
@@ -171,7 +172,7 @@ public class Node : INode
 
     public Thread Run()
     {
-        Thread t = new(() =>
+        Thread t = new(async () =>
         {
             // If already running, don't run again
             if (IsRunning) { return; }
@@ -181,7 +182,7 @@ public class Node : INode
             {
                 if (State == NODESTATE.LEADER && ElectionTimeout <= 0)
                 {
-                    Heartbeat();
+                    await Heartbeat();
 
                     if (ElectionTimeout <= 0)
                     {
