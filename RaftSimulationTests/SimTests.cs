@@ -62,15 +62,17 @@ public class SimTests
 
     [Fact]
     // Testing 2
-    public void Cluster_WhenNodeReceivesAppendEntries_ThenRemembersOtherNodeIsCurrentLeader()
+    public async Task Cluster_WhenNodeReceivesAppendEntries_ThenRemembersOtherNodeIsCurrentLeader()
     {
         var leader = Substitute.For<INode>();
         leader.State.Returns(NODESTATE.LEADER);
         leader.Id.Returns(1);
-        Node follower = new(1);
-        follower.Neighbors = new Dictionary<int, INode> { { leader.Id, leader }, };
+        Node follower = new(1)
+        {
+            Neighbors = new Dictionary<int, INode> { { leader.Id, leader }, }
+        };
 
-        follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
+        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
 
         Assert.Equal(leader.Id, follower.CurrentLeader);
     }
@@ -312,7 +314,7 @@ public class SimTests
 
     [Fact]
     // Testing 12
-    public void WhenCandidateReceivesMessageFromLaterTerm_BecomesFollower()
+    public async Task WhenCandidateReceivesMessageFromLaterTerm_BecomesFollower()
     {
         var n2 = Substitute.For<INode>();
         n2.Term.Returns(1);
@@ -328,14 +330,14 @@ public class SimTests
             }
         };
 
-        n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex);
+        await n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex);
 
         Assert.Equal(NODESTATE.FOLLOWER, n1.State);
     }
 
     [Fact]
     // Testing 13
-    public void WhenCandidateReceivesMessageFromEqualTerm_BecomesFollower()
+    public async Task WhenCandidateReceivesMessageFromEqualTerm_BecomesFollower()
     {
         var n2 = Substitute.For<INode>();
         n2.Term.Returns(1);
@@ -352,7 +354,7 @@ public class SimTests
             }
         };
 
-        n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex);
+        await n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex);
 
         Assert.Equal(NODESTATE.FOLLOWER, n1.State);
     }
@@ -476,7 +478,7 @@ public class SimTests
     }
 
     [Fact]
-    public void WhenFollowerReceivesHeartbeatFromLeader_ItUpdatesItsTermToMatchLeader()
+    public async Task WhenFollowerReceivesHeartbeatFromLeader_ItUpdatesItsTermToMatchLeader()
     {
         Node follower = new(0);
         var leader = Substitute.For<INode>();
@@ -490,7 +492,7 @@ public class SimTests
                 {leader.Id, leader}
             };
 
-        follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
+        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
 
         Assert.Equal(leader.Term, follower.Term);
     }

@@ -106,6 +106,21 @@ public class ReplciationTests
     }
 
     [Fact]
+    // Test 7
+    public async Task WhenFollowerLearnsLogIsCommitted_ItCommitsThatLog()
+    {
+        var mockNode = Substitute.For<INode>();
+        Node follower = new(0)
+        {
+            Neighbors = new Dictionary<int, INode>() { { mockNode.Id, mockNode } }
+        };
+
+        await follower.AppendEntries(mockNode.Id, mockNode.Term, mockNode.CommittedLogIndex);
+
+        Assert.Equal(mockNode.CommittedLogIndex, follower.CommittedLogIndex);
+    }
+
+    [Fact]
     // Test 9
     public void LeaderCommitsLogs_ByIncrementingCommittedLogIndex()
     {
