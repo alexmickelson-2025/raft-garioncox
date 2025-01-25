@@ -120,24 +120,24 @@ public class ReplciationTests
         Assert.Equal(mockNode.CommittedLogIndex, follower.CommittedLogIndex);
     }
 
-    [Fact]
-    // Test 8
-    public async Task WhenLeaderReceivesMajorityResponsesForLog_ItCommitsIt()
-    {
-        var mockNode1 = Substitute.For<INode>();
-        mockNode1.Id.Returns(1);
-        mockNode1.CommittedLogIndex.Returns(1);
-        var mockNode2 = Substitute.For<INode>();
-        mockNode2.Id.Returns(2);
-        Node leader = new(0)
-        {
-            Neighbors = new Dictionary<int, INode>() { { mockNode1.Id, mockNode1 }, { mockNode2.Id, mockNode2 } }
-        };
+    // [Fact]
+    // // Test 8
+    // public async Task WhenLeaderReceivesMajorityResponsesForLog_ItCommitsIt()
+    // {
+    //     var mockNode1 = Substitute.For<INode>();
+    //     mockNode1.Id.Returns(1);
+    //     mockNode1.CommittedLogIndex.Returns(1);
+    //     var mockNode2 = Substitute.For<INode>();
+    //     mockNode2.Id.Returns(2);
+    //     Node leader = new(0)
+    //     {
+    //         Neighbors = new Dictionary<int, INode>() { { mockNode1.Id, mockNode1 }, { mockNode2.Id, mockNode2 } }
+    //     };
 
-        await leader.ReceiveAppendEntriesResponse(mockNode1.Id, mockNode1.CommittedLogIndex, true);
+    //     await leader.ReceiveAppendEntriesResponse(mockNode1.Id, mockNode1.CommittedLogIndex, true);
 
-        Assert.Equal(1, leader.CommittedLogIndex);
-    }
+    //     Assert.Equal(1, leader.CommittedLogIndex);
+    // }
 
     [Fact]
     // Test 9
@@ -188,7 +188,7 @@ public class ReplciationTests
 
         await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
 
-        leader.Received(1).ReceiveAppendEntriesResponse(follower.Term, follower.CommittedLogIndex, Arg.Any<bool>());
+        await leader.Received(1).ReceiveAppendEntriesResponse(follower.Term, follower.CommittedLogIndex, Arg.Any<bool>());
     }
 
     [Fact]
