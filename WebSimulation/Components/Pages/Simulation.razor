@@ -61,9 +61,21 @@
         var sim2 = new SimNode(node2);
         var sim3 = new SimNode(node3);
 
-        sim1.Neighbors = [sim2, sim3];
-        sim2.Neighbors = [sim1, sim3];
-        sim3.Neighbors = [sim1, sim2];
+        sim1.Neighbors = new Dictionary<int, INode>() 
+            {
+                {sim2.Id, sim2},
+                {sim3.Id, sim3}
+            };
+        sim2.Neighbors = new Dictionary<int, INode>() 
+            {
+                {sim1.Id, sim1},
+                {sim3.Id, sim3}
+            };
+        sim3.Neighbors = new Dictionary<int, INode>() 
+            {
+                {sim1.Id, sim1},
+                {sim2.Id, sim2}
+            };
 
         nodes = [sim1, sim2, sim3];
         StateHasChanged();

@@ -5,7 +5,6 @@ public class SimNode : INode
     Node node;
     public int Id { get => ((INode)node).Id; set => ((INode)node).Id = value; }
     public bool HasVoted { get => ((INode)node).HasVoted; set => ((INode)node).HasVoted = value; }
-    public INode[] Neighbors { get => ((INode)node).Neighbors; set => ((INode)node).Neighbors = value; }
     public NODESTATE State { get => ((INode)node).State; set => ((INode)node).State = value; }
     public int Term { get => ((INode)node).Term; set => ((INode)node).Term = value; }
     public int? Vote { get => ((INode)node).Vote; set => ((INode)node).Vote = value; }
@@ -13,16 +12,13 @@ public class SimNode : INode
     public int? CurrentLeader { get => ((INode)node).CurrentLeader; set => ((INode)node).CurrentLeader = value; }
     public int TimeoutRate { get => ((INode)node).TimeoutRate; set => ((INode)node).TimeoutRate = value; }
     public int NetworkDelay { get; set; } = 0;
+    public int CommittedLogIndex { get => ((INode)node).CommittedLogIndex; set => ((INode)node).CommittedLogIndex = value; }
+    public List<Entry> Entries { get => ((INode)node).Entries; set => ((INode)node).Entries = value; }
+    public Dictionary<int, INode> Neighbors { get => ((INode)node).Neighbors; set => ((INode)node).Neighbors = value; }
 
     public SimNode(Node n)
     {
         node = n;
-    }
-
-    public bool AppendEntries(int id, int term)
-    {
-        Thread.Sleep(NetworkDelay);
-        return ((INode)node).AppendEntries(id, term);
     }
 
     public void BecomeCandidate()
@@ -59,5 +55,20 @@ public class SimNode : INode
     public void Stop()
     {
         ((INode)node).Stop();
+    }
+
+    public Task AppendEntries(int id, int term, int committedLogIndex, Entry? entry = null)
+    {
+        return ((INode)node).AppendEntries(id, term, committedLogIndex, entry);
+    }
+
+    public Task ReceiveAppendEntriesResponse(int followerTerm, int followerEntryIndex, bool response)
+    {
+        return ((INode)node).ReceiveAppendEntriesResponse(followerTerm, followerEntryIndex, response);
+    }
+
+    public void ReceiveClientCommand(string command)
+    {
+        ((INode)node).ReceiveClientCommand(command);
     }
 }
