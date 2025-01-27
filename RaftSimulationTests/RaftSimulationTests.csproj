@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\raft-garioncox\raft-garioncox.csproj" />
+    <ProjectReference Include="..\WebSimulation\WebSimulation.csproj" />
   </ItemGroup>
 
   <ItemGroup>

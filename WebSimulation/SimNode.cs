@@ -15,6 +15,8 @@ public class SimNode : INode
     public int CommittedLogIndex { get => ((INode)node).CommittedLogIndex; set => ((INode)node).CommittedLogIndex = value; }
     public List<Entry> Entries { get => ((INode)node).Entries; set => ((INode)node).Entries = value; }
     public Dictionary<int, INode> Neighbors { get => ((INode)node).Neighbors; set => ((INode)node).Neighbors = value; }
+    public bool IsPaused { get => ((INode)node).IsPaused; set => ((INode)node).IsPaused = value; }
+    public int TimeoutMultiplier { get => ((INode)node).TimeoutMultiplier; set => ((INode)node).TimeoutMultiplier = value; }
 
     public SimNode(Node n)
     {
@@ -70,5 +72,15 @@ public class SimNode : INode
     public void ReceiveClientCommand(string command)
     {
         ((INode)node).ReceiveClientCommand(command);
+    }
+
+    public void Pause()
+    {
+        ((INode)node).Pause();
+    }
+
+    public void Unpause()
+    {
+        ((INode)node).Unpause();
     }
 }

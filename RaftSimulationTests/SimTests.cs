@@ -158,7 +158,7 @@ public class SimTests
 
         Thread t = n.Run();
 
-        Thread.Sleep(20);
+        Thread.Sleep(60);
         n.Stop();
         t.Join();
 

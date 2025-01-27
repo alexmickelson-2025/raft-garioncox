@@ -16,9 +16,11 @@ public class Node : INode
     public int Term { get; set; } = 0;
     private readonly object TimeoutLock = new();
     public int TimeoutRate { get; set; } = 10;
+    public int TimeoutMultiplier { get; set; } = 1;
     private object VoteCountLock = new();
     private int VoteCount = 0;
     public int? Vote { get; set; } = null;
+    public bool IsPaused { get; set; } = false;
 
     public Node(int id)
     {
@@ -28,6 +30,8 @@ public class Node : INode
 
     public async Task AppendEntries(int leaderId, int leaderTerm, int committedLogIndex, Entry? entry = null)
     {
+        if (IsPaused) { return; }
+
         Neighbors[leaderId].ReceiveAppendEntriesResponse(Term, CommittedLogIndex, true);
         if (leaderTerm < Term) { return; }
 
@@ -161,11 +165,11 @@ public class Node : INode
         {
             if (isLeader)
             {
-                ElectionTimeout = 50;
+                ElectionTimeout = 50 * TimeoutMultiplier;
             }
             else
             {
-                ElectionTimeout = r.Next(150, 301);
+                ElectionTimeout = r.Next(150 * TimeoutMultiplier, 301 * TimeoutMultiplier);
             }
         }
     }
@@ -174,42 +178,44 @@ public class Node : INode
     {
         Thread t = new(async () =>
         {
-            // If already running, don't run again
             if (IsRunning) { return; }
 
             IsRunning = true;
             while (IsRunning)
             {
-                if (State == NODESTATE.LEADER && ElectionTimeout <= 0)
+                if (!IsPaused)
                 {
-                    await Heartbeat();
-
-                    if (ElectionTimeout <= 0)
+                    if (State == NODESTATE.LEADER && ElectionTimeout <= 0)
                     {
-                        ResetElectionTimeout(true);
-                    }
-                }
+                        await Heartbeat();
 
-                else
-                {
-                    if (State == NODESTATE.CANDIDATE)
-                    {
-                        if (VoteCount >= Majority)
+                        if (ElectionTimeout <= 0)
                         {
-                            State = NODESTATE.LEADER;
+                            ResetElectionTimeout(true);
                         }
                     }
 
-                    if (ElectionTimeout <= 0)
+                    else
                     {
-                        ResetElectionTimeout();
-                        BecomeCandidate();
-                    }
-                }
+                        if (State == NODESTATE.CANDIDATE)
+                        {
+                            if (VoteCount >= Majority)
+                            {
+                                State = NODESTATE.LEADER;
+                            }
+                        }
 
-                lock (TimeoutLock)
-                {
-                    ElectionTimeout -= TimeoutRate;
+                        if (ElectionTimeout <= 0)
+                        {
+                            ResetElectionTimeout();
+                            BecomeCandidate();
+                        }
+                    }
+
+                    lock (TimeoutLock)
+                    {
+                        ElectionTimeout -= TimeoutRate;
+                    }
                 }
 
                 try
@@ -230,5 +236,16 @@ public class Node : INode
     public void Stop()
     {
         IsRunning = false;
+    }
+
+    public void Pause()
+    {
+        IsPaused = true;
+    }
+
+    public void Unpause()
+    {
+        IsPaused = false;
+        ResetElectionTimeout(State == NODESTATE.LEADER);
     }
 }

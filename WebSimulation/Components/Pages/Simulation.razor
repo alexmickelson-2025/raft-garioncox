@@ -13,11 +13,22 @@
     @foreach (var n in nodes)
     {
         var timeoutRemaining = n.ElectionTimeout;
-        var maxIntervalMilliseconds = 300.0;
+        var maxIntervalMilliseconds = n.State == NODESTATE.LEADER ? 50.0 * TimeoutMultiplier : 300.0 * TimeoutMultiplier;
         var percentageRemaining = (int)(100 * (Math.Abs(n.ElectionTimeout) / maxIntervalMilliseconds));
-        <div class="col border border-@(n.State == NODESTATE.LEADER ? "danger" : "success")-subtle p-3 m-2 rounded-3">
+        <div class="col border border p-3 m-2 rounded-3">
+            <div class="d-flex flex-row">
+                <h2>Node @n.Id</h2>
+                @if (n.IsPaused)
+                {
+                    <button class="btn btn-outline-success ms-auto" @onclick="n.Unpause">resume</button>
+                }
+                else
+                {
+                    <button class="btn btn-outline-danger ms-auto" @onclick="n.Pause">pause</button>
+                }
+            </div>
             <div class="d-flex flex-column">
-                <div>(#@n.Id) [@(((n.State).ToString().ToLower()))]</div>
+                <div>@(n.State)</div>
                 <div>Term @n.Term</div>
                 <div>Following: @((n.CurrentLeader != null) ? n.CurrentLeader : "No leader")</div>
             </div>
@@ -26,7 +37,8 @@
                 <div class="progress" role="progressbar" aria-label="Basic example"
                     aria-valuenow="@(Math.Abs(timeoutRemaining))" aria-valuemin="0"
                     aria-valuemax="@(maxIntervalMilliseconds)">
-                    <div class="progress-bar bg-success-subtle" style="width: @percentageRemaining%;"></div>
+                    <div class="progress-bar bg-@(n.State == NODESTATE.LEADER ? "danger" : "success")"
+                        style="width: @percentageRemaining%;"></div>
                 </div>
             </div>
         </div>
@@ -61,21 +73,9 @@
         var sim2 = new SimNode(node2);
         var sim3 = new SimNode(node3);
 
-        sim1.Neighbors = new Dictionary<int, INode>() 
-            {
-                {sim2.Id, sim2},
-                {sim3.Id, sim3}
-            };
-        sim2.Neighbors = new Dictionary<int, INode>() 
-            {
-                {sim1.Id, sim1},
-                {sim3.Id, sim3}
-            };
-        sim3.Neighbors = new Dictionary<int, INode>() 
-            {
-                {sim1.Id, sim1},
-                {sim2.Id, sim2}
-            };
+        sim1.Neighbors = new Dictionary<int, INode>() { { sim2.Id, sim2 }, { sim3.Id, sim3 } };
+        sim2.Neighbors = new Dictionary<int, INode>() { { sim1.Id, sim1 }, { sim3.Id, sim3 } };
+        sim3.Neighbors = new Dictionary<int, INode>() { { sim1.Id, sim1 }, { sim2.Id, sim2 } };
 
         nodes = [sim1, sim2, sim3];
         StateHasChanged();
@@ -119,7 +119,7 @@
         TimeoutMultiplier = multiplier;
         foreach (SimNode node in nodes)
         {
-            node.TimeoutRate = multiplier;
+            node.TimeoutMultiplier = multiplier;
         }
         StateHasChanged();
     }
