@@ -58,4 +58,16 @@ public class WebTests
         leader.Stop();
         t.Join();
     }
+
+    [Fact]
+    public void WhenFollowerGetsPaused_ItDoesNotTimeOutToBecomeCandidate()
+    {
+        Node node = new(0);
+
+        node.Pause();
+        Thread t = node.Run();
+        Thread.Sleep(400);
+
+        Assert.Equal(NODESTATE.FOLLOWER, node.State);
+    }
 }

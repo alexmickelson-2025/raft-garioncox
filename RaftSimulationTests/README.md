@@ -25,5 +25,7 @@
 20) [ ] if a node receives and appendentries with a term and index that do not match, you will reject the appendentry until you find a matching log 
 
 #### Before UI again
-21) [ ] when node is a leader with an election loop, then they get paused, other nodes do not get heartbeast for 400 ms
-22) [ ] when node is a leader with an election loop, then they get paused, other nodes do not get heartbeast for 400 ms, then they get un-paused and heartbeats resume
+21) [x] when node is a leader with an election loop, then they get paused, other nodes do not get heartbeast for 400 ms
+22) [x] when node is a leader with an election loop, then they get paused, other nodes do not get heartbeast for 400 ms, then they get un-paused and heartbeats resume
+23) [x] When a follower gets paused, it does not time out to become a candidate
+24) [ ] When a follower gets unpaused, it will eventually become a candidate.
