@@ -35,7 +35,7 @@ public class ReplciationTests
         leader.Heartbeat();
 
         // ASSERT
-        node1.Received().AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, Arg.Any<Entry>());
+        node1.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public class ReplciationTests
 
         leader.Heartbeat();
 
-        follower.Received(1).AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, e);
+        follower.Received(1).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public class ReplciationTests
             Neighbors = new Dictionary<int, INode>() { { mockNode.Id, mockNode } }
         };
 
-        await follower.AppendEntries(mockNode.Id, mockNode.Term, mockNode.CommittedLogIndex);
+        await follower.AppendEntries(mockNode.Id, mockNode.Term, mockNode.CommittedLogIndex, 0, 0, []);
 
         Assert.Equal(mockNode.CommittedLogIndex, follower.CommittedLogIndex);
     }
@@ -167,7 +167,7 @@ public class ReplciationTests
             Neighbors = new Dictionary<int, INode>() { { leader.Id, leader } }
         };
 
-        await follower.AppendEntries(leader.Id, leader.Term, leader.ElectionTimeout, e);
+        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, [e]);
 
         Assert.NotEmpty(follower.Entries);
         Assert.Equal(e, follower.Entries.First());
@@ -188,7 +188,7 @@ public class ReplciationTests
             }
         };
 
-        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
+        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
 
         await leader.Received(1).ReceiveAppendEntriesResponse(follower.Id, follower.Term, follower.CommittedLogIndex, Arg.Any<bool>());
     }
@@ -220,9 +220,25 @@ public class ReplciationTests
             Neighbors = new Dictionary<int, INode> { { 1, leader }, }
         };
 
-        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
+        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
 
         Assert.Equal(leader.CommittedLogIndex, follower.CommittedLogIndex);
+    }
+
+    [Fact]
+    // Test 15
+    public void LeaderIncludesIndexAndTerm_OfEntryPrecedingNewEntry_WhenSendingAppendEntries()
+    {
+        var node1 = Substitute.For<INode>();
+        node1.Id.Returns(1);
+        Node leader = new(0)
+        {
+            Neighbors = new Dictionary<int, INode>() { { node1.Id, node1 } }
+        };
+
+        leader.Heartbeat();
+
+        node1.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
     }
 
     [Fact]
@@ -246,4 +262,43 @@ public class ReplciationTests
 
         Assert.Equal(0, leader.CommittedLogIndex);
     }
+
+    [Fact]
+    // Test 17
+    public void WhenLeader_IfNoResponseFromFollower_LeaderContinuesToSendLogEntriesInHeartbeats()
+    {
+        var node1 = Substitute.For<INode>();
+        node1.Id.Returns(1);
+        Node leader = new(0)
+        {
+            Entries = [new Entry(1, "command")],
+            Neighbors = new Dictionary<int, INode>() {
+                {node1.Id, node1}
+            }
+        };
+
+        leader.Heartbeat();
+        leader.Heartbeat();
+
+        node1.Received(2).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+    }
+
+    // [Fact]
+    // public async Task WhenLeader_IfResponseFromFollower_LeaderDoesNotIncludeLogEntriesInHeartbeats()
+    // {
+    //     Node leader = new(0)
+    //     {
+    //         Entries = [new Entry(1, "command")],
+    //     };
+    //     var node1 = Substitute.For<INode>();
+    //     node1.AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(),Arg.Any<int>(),Arg.Any<int>(), Arg.Any<List<Entry>>())
+    //         .Returns(n => leader.ReceiveAppendEntriesResponse(node1.Id, node1.Term, node1.CommittedLogIndex, true));
+    //     leader.Neighbors = new Dictionary<int, INode>() { { node1.Id, node1 } };
+
+    //     await leader.Heartbeat();
+    //     await leader.Heartbeat();
+
+    //     await node1.Received(1).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), 0, Arg.Any<List<Entry>>());
+    //     await node1.Received(1).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), 1, Arg.Any<List<Entry>>());
+    // }
 }

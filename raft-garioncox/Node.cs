@@ -30,7 +30,7 @@ public class Node : INode
         ResetElectionTimeout();
     }
 
-    public async Task AppendEntries(int leaderId, int leaderTerm, int committedLogIndex, Entry? entry = null)
+    public async Task AppendEntries(int leaderId, int leaderTerm, int committedLogIndex, int previousEntryIndex, int previousEntryTerm, List<Entry> entries)
     {
         if (IsPaused) { return; }
 
@@ -44,9 +44,9 @@ public class Node : INode
 
         ResetElectionTimeout();
 
-        if (entry != null)
+        if (entries.Count != 0)
         {
-            Entries.Add(entry);
+            Entries = Entries.Concat(entries).ToList();
         }
 
         await Task.CompletedTask;
@@ -56,16 +56,9 @@ public class Node : INode
     {
         // if (response == false) {return;}
         Neighbor_Vote[followerId] = response;
+        NextIndexes[followerId] = Entries.Count;
 
-        int tally = 1;
-        foreach (bool vote in Neighbor_Vote.Values)
-        {
-            if (vote)
-            {
-                tally++;
-            }
-
-        }
+        int tally = 1 + Neighbor_Vote.Values.Count(vote => vote);
 
         if (tally >= Majority)
         {
@@ -89,8 +82,8 @@ public class Node : INode
         CurrentLeader = Id;
         foreach (int key in Neighbors.Keys)
         {
-            Neighbors[key].AppendEntries(Id, Term, CommittedLogIndex);
             NextIndexes[key] = Entries.Count + 1;
+            Heartbeat();
         }
     }
 
@@ -104,9 +97,22 @@ public class Node : INode
     {
         Neighbors.Values.Select(async node =>
         {
-            Entry? e = Entries.Count > 0 ? Entries.Last() : null;
-            await node.AppendEntries(Id, Term, CommittedLogIndex, e);
+            List<Entry> newEntries;
+            try
+            {
+                int nextIndex = NextIndexes[node.Id];
+                newEntries = Entries.Take(nextIndex).ToList();
+            }
+            catch
+            {
+                newEntries = [];
+            }
+
+            int previousEntryIndex = Entries.Count > 0 ? Entries.Count - 1 : 0;
+            int previousEntryTerm = previousEntryIndex != 0 ? Entries[previousEntryIndex].Term : 0;
+            await node.AppendEntries(Id, Term, CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries);
         }).ToArray();
+
         return Task.CompletedTask;
     }
 

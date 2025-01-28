@@ -15,7 +15,7 @@ public interface INode
     int Term { get; set; }
     public int TimeoutMultiplier { get; set; }
     int? Vote { get; set; }
-    public Task AppendEntries(int id, int term, int committedLogIndex, Entry? entry = null);
+    public Task AppendEntries(int leaderId, int leaderTerm, int committedLogIndex, int previousEntryIndex, int previousEntryTerm, List<Entry> entries);
     public void BecomeCandidate();
     public Task ReceiveAppendEntriesResponse(int followerId, int followerTerm, int followerEntryIndex, bool response);
     public void ReceiveClientCommand(string command);

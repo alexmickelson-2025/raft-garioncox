@@ -24,13 +24,13 @@ public class WebTests
         leader.Pause();
 
         Thread.Sleep(400);
-        await follower.Received(0).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>());
+        await follower.Received(0).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
 
         Thread.Sleep(400);
 
         leader.Stop();
         t.Join();
-        await follower.Received(0).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>());
+        await follower.Received(0).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
     }
 
     [Fact]
@@ -50,11 +50,11 @@ public class WebTests
         leader.Pause();
 
         Thread.Sleep(400);
-        await follower.Received(0).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>());
+        await follower.Received(0).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
         leader.Unpause();
 
         Thread.Sleep(400);
-        await follower.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>());
+        await follower.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
 
         leader.Stop();
         t.Join();

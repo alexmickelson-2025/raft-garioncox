@@ -59,12 +59,6 @@ public class SimNode : INode
         ((INode)node).Stop();
     }
 
-    public Task AppendEntries(int id, int term, int committedLogIndex, Entry? entry = null)
-    {
-        return ((INode)node).AppendEntries(id, term, committedLogIndex, entry);
-    }
-
-
     public void ReceiveClientCommand(string command)
     {
         ((INode)node).ReceiveClientCommand(command);
@@ -83,5 +77,10 @@ public class SimNode : INode
     public Task ReceiveAppendEntriesResponse(int followerId, int followerTerm, int followerEntryIndex, bool response)
     {
         return ((INode)node).ReceiveAppendEntriesResponse(followerId, followerTerm, followerEntryIndex, response);
+    }
+
+    public Task AppendEntries(int leaderId, int leaderTerm, int committedLogIndex, int previousEntryIndex, int previousEntryTerm, List<Entry> entries)
+    {
+        return ((INode)node).AppendEntries(leaderId, leaderTerm, committedLogIndex, previousEntryIndex, previousEntryTerm, entries);
     }
 }

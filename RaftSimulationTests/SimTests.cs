@@ -31,7 +31,7 @@ public class SimTests
         t.Join();
 
         // ASSERT
-        follower.Received().AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
+        follower.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public class SimTests
         t.Join();
 
         // ASSERT
-        await follower.Received().AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, null);
+        await follower.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class SimTests
             Neighbors = new Dictionary<int, INode> { { leader.Id, leader }, }
         };
 
-        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
+        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
 
         Assert.Equal(leader.Id, follower.CurrentLeader);
     }
@@ -187,7 +187,7 @@ public class SimTests
 
 
         // ACT
-        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
+        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
 
         // ASSERT
         Assert.True(follower.State == NODESTATE.FOLLOWER);
@@ -330,7 +330,7 @@ public class SimTests
             }
         };
 
-        await n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex);
+        await n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex, 0, 0, []);
 
         Assert.Equal(NODESTATE.FOLLOWER, n1.State);
     }
@@ -354,7 +354,7 @@ public class SimTests
             }
         };
 
-        await n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex);
+        await n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex, 0, 0, []);
 
         Assert.Equal(NODESTATE.FOLLOWER, n1.State);
     }
@@ -433,7 +433,7 @@ public class SimTests
             Neighbors = new() { { mockNode.Id, mockNode } }
         };
 
-        await n1.AppendEntries(mockNode.Id, mockNode.Term, mockNode.CommittedLogIndex);
+        await n1.AppendEntries(mockNode.Id, mockNode.Term, mockNode.CommittedLogIndex, 0, 0, []);
         await mockNode.Received().ReceiveAppendEntriesResponse(n1.Id, n1.Term, n1.CommittedLogIndex, Arg.Any<bool>());
     }
 
@@ -450,7 +450,7 @@ public class SimTests
             Neighbors = new() { { mockLeader.Id, mockLeader } }
         };
 
-        await n1.AppendEntries(mockLeader.Id, mockLeader.Term, mockLeader.CommittedLogIndex);
+        await n1.AppendEntries(mockLeader.Id, mockLeader.Term, mockLeader.CommittedLogIndex, 0, 0, []);
 
         await mockLeader.Received().ReceiveAppendEntriesResponse(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<bool>());
     }
@@ -474,7 +474,7 @@ public class SimTests
 
         candidate.BecomeLeader();
 
-        n1.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>());
+        n1.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
     }
 
     [Fact]
@@ -492,7 +492,7 @@ public class SimTests
                 {leader.Id, leader}
             };
 
-        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
+        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
 
         Assert.Equal(leader.Term, follower.Term);
     }
