@@ -17,7 +17,7 @@ public interface INode
     int? Vote { get; set; }
     public Task AppendEntries(int id, int term, int committedLogIndex, Entry? entry = null);
     public void BecomeCandidate();
-    public Task ReceiveAppendEntriesResponse(int followerTerm, int followerEntryIndex, bool response);
+    public Task ReceiveAppendEntriesResponse(int followerId, int followerTerm, int followerEntryIndex, bool response);
     public void ReceiveClientCommand(string command);
     public void ReceiveVote(bool vote);
     public bool RequestVoteFor(int id, int term);

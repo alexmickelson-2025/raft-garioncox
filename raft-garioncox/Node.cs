@@ -13,6 +13,7 @@ public class Node : INode
     private int Majority => (int)Math.Ceiling((Neighbors.Keys.Count + 1.0) / 2);
     public Dictionary<int, INode> Neighbors { get; set; } = [];
     public Dictionary<int, int> NextIndexes { get; set; } = [];
+    public Dictionary<int, bool> Neighbor_Vote { get; set; } = [];
     public int Term { get; set; } = 0;
     private readonly object TimeoutLock = new();
     public int TimeoutRate { get; set; } = 10;
@@ -32,7 +33,7 @@ public class Node : INode
     {
         if (IsPaused) { return; }
 
-        Neighbors[leaderId].ReceiveAppendEntriesResponse(Term, CommittedLogIndex, true);
+        Neighbors[leaderId].ReceiveAppendEntriesResponse(Id, Term, CommittedLogIndex, true);
         if (leaderTerm < Term) { return; }
 
         State = NODESTATE.FOLLOWER;
@@ -50,9 +51,25 @@ public class Node : INode
         await Task.CompletedTask;
     }
 
-    public async Task ReceiveAppendEntriesResponse(int followerTerm, int followerEntryIndex, bool response)
+    public async Task ReceiveAppendEntriesResponse(int followerId, int followerTerm, int followerEntryIndex, bool response)
     {
-        throw new NotImplementedException();
+        // if (response == false) {return;}
+        Neighbor_Vote[followerId] = response;
+
+        int tally = 1;
+        foreach (bool vote in Neighbor_Vote.Values)
+        {
+            if (vote)
+            {
+                tally++;
+            }
+
+        }
+
+        if (tally >= Majority)
+        {
+            CommittedLogIndex++;
+        }
     }
 
     public void BecomeCandidate()

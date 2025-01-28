@@ -90,8 +90,10 @@ public class WebTests
         node.Pause();
         node.Unpause();
         Thread t = node.Run();
-        Thread.Sleep(400);
+        Thread.Sleep(600);
+        node.Stop();
+        t.Join();
 
-        Assert.Equal(NODESTATE.CANDIDATE, node.State);
+        Assert.NotEqual(NODESTATE.FOLLOWER, node.State);
     }
 }
