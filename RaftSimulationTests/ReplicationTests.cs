@@ -132,7 +132,8 @@ public class ReplciationTests
         mockNode2.Id.Returns(2);
         Node leader = new(0)
         {
-            Neighbors = new Dictionary<int, INode>() { { mockNode1.Id, mockNode1 }, { mockNode2.Id, mockNode2 } }
+            Neighbors = new Dictionary<int, INode>() { { mockNode1.Id, mockNode1 }, { mockNode2.Id, mockNode2 } },
+            Entries = [new Entry(1, "command")]
         };
 
         await leader.ReceiveAppendEntriesResponse(mockNode1.Id, mockNode1.Term, mockNode1.CommittedLogIndex, true);
@@ -222,5 +223,27 @@ public class ReplciationTests
         await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex);
 
         Assert.Equal(leader.CommittedLogIndex, follower.CommittedLogIndex);
+    }
+
+    [Fact]
+    // Test 16
+    public void WhenLeaderSendsHeartbeatWithLog_DoesNotReceiveMajority_LogRemainsUncommitted()
+    {
+        var node1 = Substitute.For<INode>();
+        node1.Id.Returns(1);
+        var node2 = Substitute.For<INode>();
+        node2.Id.Returns(2);
+        Node leader = new(0)
+        {
+            Neighbors = new Dictionary<int, INode>() {
+                {node1.Id, node1},
+                {node2.Id, node2}
+            },
+            Entries = [new Entry(1, "command")],
+        };
+
+        leader.Heartbeat();
+
+        Assert.Equal(0, leader.CommittedLogIndex);
     }
 }

@@ -69,7 +69,7 @@ public class Node : INode
 
         if (tally >= Majority)
         {
-            CommittedLogIndex++;
+            CommitEntry();
         }
     }
 
