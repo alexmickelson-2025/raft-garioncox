@@ -193,6 +193,21 @@ public class ReplciationTests
     }
 
     [Fact]
+    // Test 13
+    public void WhenLeaderCommitsLog_ItAppliesItToItsStateMachine()
+    {
+        Entry entry = new(1, "command");
+        Node leader = new(0)
+        {
+            Entries = [entry]
+        };
+
+        leader.CommitEntry();
+
+        Assert.Equal(entry.Value, leader.LogState);
+    }
+
+    [Fact]
     // Test 14
     public async Task WhenFollowerReceivesHeartbeat_ItMatchesCommitIndexOfHeartbeat()
     {

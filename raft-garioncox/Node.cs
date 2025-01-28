@@ -10,6 +10,7 @@ public class Node : INode
     public List<Entry> Entries { get; set; } = [];
     public bool HasVoted { get; set; } = false;
     public bool IsRunning = false;
+    public string LogState { get; private set; } = "";
     private int Majority => (int)Math.Ceiling((Neighbors.Keys.Count + 1.0) / 2);
     public Dictionary<int, INode> Neighbors { get; set; } = [];
     public Dictionary<int, int> NextIndexes { get; set; } = [];
@@ -95,6 +96,7 @@ public class Node : INode
 
     public void CommitEntry()
     {
+        LogState = Entries[CommittedLogIndex].Value;
         CommittedLogIndex++;
     }
 
