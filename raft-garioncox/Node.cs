@@ -115,16 +115,14 @@ public class Node : INode
     {
         Neighbors.Values.Select(async node =>
         {
-            List<Entry> newEntries;
+            List<Entry> newEntries = [];
             try
             {
                 int nextIndex = NextIndexes[node.Id];
                 newEntries = Entries.Take(nextIndex).ToList();
             }
             catch
-            {
-                newEntries = [];
-            }
+            { }
 
             int previousEntryIndex = Entries.Count > 0 ? Entries.Count - 1 : 0;
             int previousEntryTerm = previousEntryIndex != 0 ? Entries[previousEntryIndex].Term : 0;

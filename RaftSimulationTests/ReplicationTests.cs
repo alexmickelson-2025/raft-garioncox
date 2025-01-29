@@ -430,7 +430,7 @@ public class ReplciationTests
 
     [Fact]
     // Test 17
-    public void WhenLeader_IfNoResponseFromFollower_LeaderContinuesToSendLogEntriesInHeartbeats()
+    public async Task WhenLeader_IfNoResponseFromFollower_LeaderContinuesToSendLogEntriesInHeartbeats()
     {
         var follower = Substitute.For<INode>();
         follower.Id.Returns(1);
@@ -442,11 +442,10 @@ public class ReplciationTests
             }
         };
 
-        leader.Heartbeat();
-        leader.Heartbeat();
+        leader.BecomeLeader();
+        await leader.Heartbeat();
 
-        follower.Received(2).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
-        Assert.Fail(); // TODO: Check what is contained in the entries
+        await follower.Received(2).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Do<List<Entry>>(Assert.NotNull));
     }
 
     [Fact]
