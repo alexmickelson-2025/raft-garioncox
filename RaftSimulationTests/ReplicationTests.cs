@@ -243,26 +243,27 @@ public class ReplciationTests
 
     [Fact]
     // Test 15b
-    public async Task WhenFollowerReceivesAppendEntries_AndDoesNotFindEntryInItsLogWithSameIndexAndTermInParams_ItRefusesNewEntries()
+    public async Task WhenFollowerReceivesAppendEntries_AndDoesNotFindIndexAndTermMatch_ItRefusesNewEntries()
     {
         var leader = Substitute.For<INode>();
         leader.Id.Returns(1);
         Node follower = new(0)
         {
-            Neighbors = new Dictionary<int, INode>() { { leader.Id, leader } }
+            Neighbors = new Dictionary<int, INode>() { { leader.Id, leader } },
+            Entries = [new Entry(0, "a"), new Entry(1, "b")]
         };
 
         int previousEntryIndex = 1;
         int previousEntryTerm = 2;
         List<Entry> newEntries = [
-            new Entry(1,"command"),
-            new Entry(2, "command2"),
+            new Entry(2, "c"),
+            new Entry(2, "d"),
         ];
 
         await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries);
 
         await leader.Received().ReceiveAppendEntriesResponse(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), false);
-        Assert.Empty(follower.Entries);
+        Assert.Equal(2, follower.Entries.Count);
     }
 
     [Fact]
@@ -271,22 +272,18 @@ public class ReplciationTests
     {
         var leader = Substitute.For<INode>();
         leader.Id.Returns(1);
-        List<Entry> newEntries = [
-            new Entry(3,"command2"),
-            new Entry(4, "command3"),
-        ];
-
         Node follower = new(0)
         {
             Neighbors = new Dictionary<int, INode>() { { leader.Id, leader } },
-            Entries = [
-                new Entry(1,"command"),
-                new Entry(2, "command2"),
-            ]
+            Entries = [new Entry(0, "a"), new Entry(1, "b")]
         };
 
         int previousEntryIndex = 1;
-        int previousEntryTerm = 2;
+        int previousEntryTerm = 1;
+        List<Entry> newEntries = [
+            new Entry(1, "c"),
+            new Entry(2, "d"),
+        ];
 
         await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries);
 
@@ -301,6 +298,35 @@ public class ReplciationTests
     // {
     //     // - if index is greater, it will be decreased by leader
     // }
+
+    [Fact]
+    // Test 15e
+    public async Task WhenFollowerReceivesAppendEntries_WhenPreviousTermLessThanStoredTerm_ItDeletesAllEntriesAfterInconsistentLog()
+    {
+        // ARRANGE
+        var leader = Substitute.For<INode>();
+        leader.Id.Returns(1);
+
+        Node follower = new(0)
+        {
+            Neighbors = new Dictionary<int, INode>() { { leader.Id, leader } },
+            Entries = [
+                new Entry(1,"a"),
+                new Entry(2, "b"), // Inconsistent log
+                new Entry(3, "bogus command")
+            ]
+        };
+
+        int previousEntryIndex = 1;
+        int previousEntryTerm = 1; // Term is smaller than the inconsistent log
+
+        // ACT
+        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, []);
+
+        // ASSERT
+        await leader.Received().ReceiveAppendEntriesResponse(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), false);
+        Assert.Single(follower.Entries);
+    }
 
     [Fact]
     // Test 16

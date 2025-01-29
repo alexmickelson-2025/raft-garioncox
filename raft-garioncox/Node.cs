@@ -34,18 +34,24 @@ public class Node : INode
     {
         if (IsPaused) { return; }
 
-        bool response;
+        bool didAcceptLogs;
 
         try
         {
-            response = Entries[previousEntryIndex].Term == previousEntryTerm;
+            Entry previousEntry = Entries[previousEntryIndex];
+            didAcceptLogs = previousEntry.Term == previousEntryTerm;
+
+            if (previousEntry.Term > previousEntryTerm)
+            {
+                Entries = Entries.Take(previousEntryIndex).ToList();
+            }
         }
         catch
         {
-            response = Entries.Count == 0 && previousEntryIndex == 0;
+            didAcceptLogs = Entries.Count == 0 && previousEntryIndex == 0;
         }
-        
-        _ = Neighbors[leaderId].ReceiveAppendEntriesResponse(Id, Term, CommittedLogIndex, response);
+
+        _ = Neighbors[leaderId].ReceiveAppendEntriesResponse(Id, Term, CommittedLogIndex, didAcceptLogs);
         if (leaderTerm < Term) { return; }
 
         State = NODESTATE.FOLLOWER;
@@ -55,7 +61,7 @@ public class Node : INode
 
         ResetElectionTimeout();
 
-        if (entries.Count != 0 && response)
+        if (entries.Count != 0 && didAcceptLogs)
         {
             Entries = Entries.Concat(entries).ToList();
         }
