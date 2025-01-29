@@ -266,6 +266,36 @@ public class ReplciationTests
     }
 
     [Fact]
+    // Test 15c
+    public async Task WhenFollowerReceivesAppendEntries_AndFindsEntryInItsLogWithNewerTermInParams_ItAcceptsNewEntries()
+    {
+        var leader = Substitute.For<INode>();
+        leader.Id.Returns(1);
+        List<Entry> newEntries = [
+            new Entry(3,"command2"),
+            new Entry(4, "command3"),
+        ];
+
+        Node node1 = new(0)
+        {
+            Neighbors = new Dictionary<int, INode>() { { leader.Id, leader } },
+            Entries = [
+                new Entry(1,"command"),
+                new Entry(2, "command2"),
+            ]
+        };
+
+        int previousEntryIndex = 1;
+        int previousEntryTerm = 2;
+
+        await node1.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries);
+
+        await leader.Received().ReceiveAppendEntriesResponse(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), true);
+        Assert.Equal(newEntries[0].Value, node1.Entries[2].Value);
+        Assert.Equal(newEntries[1].Value, node1.Entries[3].Value);
+    }
+
+    [Fact]
     // Test 16
     public void WhenLeaderSendsHeartbeatWithLog_DoesNotReceiveMajority_LogRemainsUncommitted()
     {
