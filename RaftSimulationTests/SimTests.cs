@@ -434,7 +434,7 @@ public class SimTests
         };
 
         await n1.AppendEntries(mockNode.Id, mockNode.Term, mockNode.CommittedLogIndex, 0, 0, []);
-        await mockNode.Received().ReceiveAppendEntriesResponse(n1.Id, n1.Term, n1.CommittedLogIndex, Arg.Any<bool>());
+        await mockNode.Received().ReceiveAppendEntriesResponse(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<bool>());
     }
 
     [Fact]

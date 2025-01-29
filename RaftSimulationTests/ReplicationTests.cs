@@ -292,12 +292,26 @@ public class ReplciationTests
         Assert.Equal(newEntries[1].Value, follower.Entries[3].Value);
     }
 
-    // [Fact]
-    // // Test 15d
-    // public async Task WhenFollowerReceivesAppendEntries_WhenLeaderPreviousLogIndexGreaterThanCurrentIndex_LeaderDecreasesPreviousTermEntry()
-    // {
-    //     // - if index is greater, it will be decreased by leader
-    // }
+    [Fact]
+    // Test 15d
+    public async Task WhenFollowerReceivesAppendEntries_WhenLeaderPreviousLogIndexGreaterThanCurrentIndex_LeaderDecreasesPreviousTermEntry()
+    {
+        var follower = Substitute.For<INode>();
+        follower.Id.Returns(1);
+        follower.Entries.Returns([new Entry(0, "a")]);
+        Node leader = new(0)
+        {
+            Neighbors = new Dictionary<int, INode>() { { follower.Id, follower } },
+            Entries = [new Entry(0, "a"), new Entry(1, "b")]
+        };
+
+        leader.BecomeLeader();
+
+        await leader.ReceiveAppendEntriesResponse(follower.Id, follower.Term, follower.Entries.Count, false);
+        // - if index is greater, it will be decreased by leader
+
+        Assert.Equal(2, leader.NextIndexes[follower.Id]);
+    }
 
     [Fact]
     // Test 15e
