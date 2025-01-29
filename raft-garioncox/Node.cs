@@ -81,6 +81,8 @@ public class Node : INode
         {
             CommitEntry();
         }
+
+        await Task.CompletedTask;
     }
 
     public void BecomeCandidate()

@@ -445,7 +445,7 @@ public class ReplciationTests
         leader.BecomeLeader();
         await leader.Heartbeat();
 
-        await follower.Received(2).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Do<List<Entry>>(Assert.NotNull));
+        await follower.Received(2).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Do<List<Entry>>(Assert.NotEmpty));
     }
 
     [Fact]
@@ -473,22 +473,20 @@ public class ReplciationTests
         await client.Received(0).ReceiveLeaderCommitResponse(Arg.Any<string>(), Arg.Any<bool>());
     }
 
-    // [Fact]
-    // public async Task WhenLeader_IfResponseFromFollower_LeaderDoesNotIncludeLogEntriesInHeartbeats()
-    // {
-    //     Node leader = new(0)
-    //     {
-    //         Entries = [new Entry(1, "command")],
-    //     };
-    //     var follower = Substitute.For<INode>();
-    //     follower.AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(),Arg.Any<int>(),Arg.Any<int>(), Arg.Any<List<Entry>>())
-    //         .Returns(n => leader.ReceiveAppendEntriesResponse(follower.Id, follower.Term, follower.CommittedLogIndex, true));
-    //     leader.Neighbors = new Dictionary<int, INode>() { { follower.Id, follower } };
+    [Fact]
+    // Test 19
+    public async Task IfNodeRecievesAppendEntries_WithFutureLogs_ThenReject()
+    {
+        var leader = Substitute.For<INode>();
+        leader.Id.Returns(1);
 
-    //     await leader.Heartbeat();
-    //     await leader.Heartbeat();
+        Node follower = new(0)
+        {
+            Neighbors = new Dictionary<int, INode>() { { leader.Id, leader } }
+        };
 
-    //     await follower.Received(1).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), 0, Arg.Any<List<Entry>>());
-    //     await follower.Received(1).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), 1, Arg.Any<List<Entry>>());
-    // }
+        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 10, 10, [new Entry(10, "a")]);
+
+        await leader.Received().ReceiveAppendEntriesResponse(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), false);
+    }
 }
