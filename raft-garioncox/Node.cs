@@ -12,9 +12,10 @@ public class Node : INode
     public bool IsRunning = false;
     public string LogState { get; private set; } = "";
     private int Majority => (int)Math.Ceiling((Neighbors.Keys.Count + 1.0) / 2);
+    public Dictionary<(int, string), IClient> ClientCommands { get; set; } = [];
     public Dictionary<int, INode> Neighbors { get; set; } = [];
     public Dictionary<int, int> NextIndexes { get; set; } = [];
-    public Dictionary<int, bool> Neighbor_Vote { get; set; } = [];
+    public Dictionary<int, bool> NeighborVote { get; set; } = [];
     public int Term { get; set; } = 0;
     private readonly object TimeoutLock = new();
     public int TimeoutRate { get; set; } = 10;
@@ -71,10 +72,10 @@ public class Node : INode
 
     public async Task ReceiveAppendEntriesResponse(int followerId, int followerTerm, int followerEntryIndex, bool response)
     {
-        Neighbor_Vote[followerId] = response;
+        NeighborVote[followerId] = response;
         NextIndexes[followerId] = Entries.Count;
 
-        int tally = 1 + Neighbor_Vote.Values.Count(vote => vote);
+        int tally = 1 + NeighborVote.Values.Count(vote => vote);
 
         if (tally >= Majority)
         {
@@ -107,6 +108,7 @@ public class Node : INode
     {
         LogState = Entries[CommittedLogIndex].Value;
         CommittedLogIndex++;
+        ClientCommands[(CommittedLogIndex, LogState)].ReceiveLeaderCommitResponse(LogState, true);
     }
 
     public Task Heartbeat()
@@ -132,10 +134,11 @@ public class Node : INode
         return Task.CompletedTask;
     }
 
-    public void ReceiveClientCommand(string command)
+    public void ReceiveClientCommand(IClient client, string command)
     {
         Entry e = new(Term, command);
         Entries.Add(e);
+        ClientCommands[(Entries.Count, command)] = client;
     }
 
     public void ReceiveVote(bool vote)

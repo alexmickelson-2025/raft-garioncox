@@ -14,6 +14,9 @@ public class ReplciationTests
     public void WhenLeaderReceivesClientCommand_LeaderSendsLogInNextAppendRPC_ToAllNodes()
     {
         // ARRANGE
+        var client = Substitute.For<IClient>();
+        client.Id.Returns(0);
+
         var follower = Substitute.For<INode>();
         follower.Id.Returns(1);
 
@@ -31,7 +34,7 @@ public class ReplciationTests
         string command = DateTime.MaxValue.ToString();
 
         // ACT
-        leader.ReceiveClientCommand(command);
+        leader.ReceiveClientCommand(client, command);
         leader.Heartbeat();
 
         // ASSERT
@@ -42,10 +45,13 @@ public class ReplciationTests
     // Test 2
     public void WhenLeaderReceivesCommandFromClient_ItAppendsEntryToLog()
     {
+        var client = Substitute.For<IClient>();
+        client.Id.Returns(0);
+
         string command = DateTime.MaxValue.ToString();
         Node leader = new(0);
 
-        leader.ReceiveClientCommand(command);
+        leader.ReceiveClientCommand(client, command);
 
         Assert.NotEmpty(leader.Entries);
         Entry e = leader.Entries.First();
@@ -124,17 +130,23 @@ public class ReplciationTests
     // Test 8
     public async Task WhenLeaderReceivesMajorityResponsesForLog_ItCommitsIt()
     {
+        var mockClient = Substitute.For<IClient>();
+        mockClient.Id.Returns(0);
+
         var mockfollower = Substitute.For<INode>();
         mockfollower.Id.Returns(1);
         mockfollower.CommittedLogIndex.Returns(1);
         mockfollower.Term.Returns(0);
+
         var mockNode2 = Substitute.For<INode>();
         mockNode2.Id.Returns(2);
+
         Node leader = new(0)
         {
             Neighbors = new Dictionary<int, INode>() { { mockfollower.Id, mockfollower }, { mockNode2.Id, mockNode2 } },
-            Entries = [new Entry(1, "command")]
         };
+
+        leader.ReceiveClientCommand(mockClient, "a");
 
         await leader.ReceiveAppendEntriesResponse(mockfollower.Id, mockfollower.Term, mockfollower.CommittedLogIndex, true);
 
@@ -145,11 +157,12 @@ public class ReplciationTests
     // Test 9
     public void LeaderCommitsLogs_ByIncrementingCommittedLogIndex()
     {
-        Node leader = new(0)
-        {
-            Entries = [new Entry(1, "name")]
-        };
+        var mockClient = Substitute.For<IClient>();
+        mockClient.Id.Returns(0);
 
+        Node leader = new(0);
+
+        leader.ReceiveClientCommand(mockClient, "a");
         leader.CommitEntry();
 
         Assert.Equal(1, leader.CommittedLogIndex);
@@ -194,18 +207,44 @@ public class ReplciationTests
     }
 
     [Fact]
+    // Test 12
+    public async Task WhenLeaderReceivesMajorityResponseForAppendEntries_ItSendsConfirmationToClient()
+    {
+        var client = Substitute.For<IClient>();
+        client.Id.Returns(0);
+
+        var follower = Substitute.For<INode>();
+        follower.Id.Returns(1);
+        follower.Entries.Returns([new Entry(0, "a")]);
+
+        var follower2 = Substitute.For<INode>();
+        follower2.Id.Returns(2);
+
+        Node leader = new(0)
+        {
+            Neighbors = new Dictionary<int, INode>() { { follower.Id, follower }, { follower2.Id, follower2 } },
+        };
+
+        leader.ReceiveClientCommand(client, "a");
+        await leader.ReceiveAppendEntriesResponse(follower.Id, follower.Term, follower.Entries.Count, true);
+
+        await client.Received().ReceiveLeaderCommitResponse("a", true);
+    }
+
+    [Fact]
     // Test 13
     public void WhenLeaderCommitsLog_ItAppliesItToItsStateMachine()
     {
-        Entry entry = new(1, "command");
-        Node leader = new(0)
-        {
-            Entries = [entry]
-        };
+        var mockClient = Substitute.For<IClient>();
+        mockClient.Id.Returns(0);
 
+        string entry = "a";
+        Node leader = new(0);
+
+        leader.ReceiveClientCommand(mockClient, entry);
         leader.CommitEntry();
 
-        Assert.Equal(entry.Value, leader.LogState);
+        Assert.Equal(entry, leader.LogState);
     }
 
     [Fact]
@@ -299,9 +338,13 @@ public class ReplciationTests
         var follower = Substitute.For<INode>();
         follower.Id.Returns(1);
         follower.Entries.Returns([new Entry(0, "a")]);
+
+        var follower2 = Substitute.For<INode>();
+        follower2.Id.Returns(2);
+
         Node leader = new(0)
         {
-            Neighbors = new Dictionary<int, INode>() { { follower.Id, follower } },
+            Neighbors = new Dictionary<int, INode>() { { follower.Id, follower }, { follower2.Id, follower2 } },
             Entries = [new Entry(0, "a"), new Entry(1, "b")]
         };
 

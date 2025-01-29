@@ -59,10 +59,6 @@ public class SimNode : INode
         ((INode)node).Stop();
     }
 
-    public void ReceiveClientCommand(string command)
-    {
-        ((INode)node).ReceiveClientCommand(command);
-    }
 
     public void Pause()
     {
@@ -82,5 +78,10 @@ public class SimNode : INode
     public Task AppendEntries(int leaderId, int leaderTerm, int committedLogIndex, int previousEntryIndex, int previousEntryTerm, List<Entry> entries)
     {
         return ((INode)node).AppendEntries(leaderId, leaderTerm, committedLogIndex, previousEntryIndex, previousEntryTerm, entries);
+    }
+
+    public void ReceiveClientCommand(IClient client, string command)
+    {
+        ((INode)node).ReceiveClientCommand(client, command);
     }
 }

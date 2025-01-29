@@ -18,7 +18,7 @@ public interface INode
     public Task AppendEntries(int leaderId, int leaderTerm, int committedLogIndex, int previousEntryIndex, int previousEntryTerm, List<Entry> entries);
     public void BecomeCandidate();
     public Task ReceiveAppendEntriesResponse(int followerId, int followerTerm, int followerEntryIndex, bool response);
-    public void ReceiveClientCommand(string command);
+    public void ReceiveClientCommand(IClient client, string command);
     public void ReceiveVote(bool vote);
     public bool RequestVoteFor(int id, int term);
     public Task RequestVoteForRPC(int cId, int cTerm);
