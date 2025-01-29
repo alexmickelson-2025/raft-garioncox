@@ -34,7 +34,18 @@ public class Node : INode
     {
         if (IsPaused) { return; }
 
-        Neighbors[leaderId].ReceiveAppendEntriesResponse(Id, Term, CommittedLogIndex, true);
+        bool response;
+
+        try
+        {
+            response = Entries[previousEntryIndex].Term == previousEntryTerm;
+        }
+        catch
+        {
+            response = Entries.Count == 0 && previousEntryIndex == 0;
+        }
+        
+        _ = Neighbors[leaderId].ReceiveAppendEntriesResponse(Id, Term, CommittedLogIndex, response);
         if (leaderTerm < Term) { return; }
 
         State = NODESTATE.FOLLOWER;
@@ -44,7 +55,7 @@ public class Node : INode
 
         ResetElectionTimeout();
 
-        if (entries.Count != 0)
+        if (entries.Count != 0 && response)
         {
             Entries = Entries.Concat(entries).ToList();
         }
@@ -54,7 +65,6 @@ public class Node : INode
 
     public async Task ReceiveAppendEntriesResponse(int followerId, int followerTerm, int followerEntryIndex, bool response)
     {
-        // if (response == false) {return;}
         Neighbor_Vote[followerId] = response;
         NextIndexes[followerId] = Entries.Count;
 

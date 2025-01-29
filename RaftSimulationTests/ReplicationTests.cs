@@ -226,7 +226,7 @@ public class ReplciationTests
     }
 
     [Fact]
-    // Test 15
+    // Test 15a
     public void LeaderIncludesIndexAndTerm_OfEntryPrecedingNewEntry_WhenSendingAppendEntries()
     {
         var node1 = Substitute.For<INode>();
@@ -239,6 +239,30 @@ public class ReplciationTests
         leader.Heartbeat();
 
         node1.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+    }
+
+    [Fact]
+    // Test 15b
+    public async Task WhenFollowerReceivesAppendEntries_AndDoesNotFindEntryInItsLogWithSameIndexAndTermInParams_ItRefusesNewEntries()
+    {
+        var leader = Substitute.For<INode>();
+        leader.Id.Returns(1);
+        Node node1 = new(0)
+        {
+            Neighbors = new Dictionary<int, INode>() { { leader.Id, leader } }
+        };
+
+        int previousEntryIndex = 1;
+        int previousEntryTerm = 2;
+        List<Entry> newEntries = [
+            new Entry(1,"command"),
+            new Entry(2, "command2"),
+        ];
+
+        await node1.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries);
+
+        await leader.Received().ReceiveAppendEntriesResponse(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), false);
+        Assert.Empty(node1.Entries);
     }
 
     [Fact]
