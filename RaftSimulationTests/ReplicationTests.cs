@@ -306,7 +306,6 @@ public class ReplciationTests
         };
 
         leader.BecomeLeader();
-
         await leader.ReceiveAppendEntriesResponse(follower.Id, follower.Term, follower.Entries.Count, false);
 
         Assert.Equal(2, leader.NextIndexes[follower.Id]);
@@ -339,6 +338,29 @@ public class ReplciationTests
         // ASSERT
         await leader.Received().ReceiveAppendEntriesResponse(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), false);
         Assert.Single(follower.Entries);
+    }
+
+    [Fact]
+    // Test 15f
+    public async Task WhenFollowerRejectsAppendEntries_LeaderDecrementsNextIndex_ThenTriesAppendEntriesAgain()
+    {
+        var follower = Substitute.For<INode>();
+        follower.Id.Returns(1);
+        follower.Entries.Returns([new Entry(0, "a")]);
+
+        var follower2 = Substitute.For<INode>();
+        follower2.Id.Returns(2);
+
+        Node leader = new(0)
+        {
+            Neighbors = new Dictionary<int, INode>() { { follower.Id, follower }, { follower2.Id, follower2 } },
+            Entries = [new Entry(0, "a"), new Entry(1, "b")]
+        };
+
+        leader.BecomeLeader();
+        await leader.ReceiveAppendEntriesResponse(follower.Id, follower.Term, follower.Entries.Count, false);
+
+        Assert.Equal(2, leader.NextIndexes[follower.Id]);
     }
 
     [Fact]
