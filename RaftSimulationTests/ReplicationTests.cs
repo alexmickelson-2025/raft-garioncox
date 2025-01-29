@@ -446,6 +446,32 @@ public class ReplciationTests
         leader.Heartbeat();
 
         follower.Received(2).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        Assert.Fail(); // TODO: Check what is contained in the entries
+    }
+
+    [Fact]
+    // Test 18
+    public async Task IfLeaderCannotCommitAnEntry_ItDoesNotSendResponseToClient()
+    {
+        var client = Substitute.For<IClient>();
+        client.Id.Returns(0);
+
+        var follower = Substitute.For<INode>();
+        follower.Id.Returns(1);
+        follower.Entries.Returns([new Entry(0, "a")]);
+
+        var follower2 = Substitute.For<INode>();
+        follower2.Id.Returns(2);
+
+        Node leader = new(0)
+        {
+            Neighbors = new Dictionary<int, INode>() { { follower.Id, follower }, { follower2.Id, follower2 } },
+        };
+
+        leader.ReceiveClientCommand(client, "a");
+        await leader.ReceiveAppendEntriesResponse(follower.Id, follower.Term, follower.Entries.Count, false);
+
+        await client.Received(0).ReceiveLeaderCommitResponse(Arg.Any<string>(), Arg.Any<bool>());
     }
 
     // [Fact]
