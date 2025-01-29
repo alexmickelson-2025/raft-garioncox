@@ -68,7 +68,7 @@ public class ReplciationTests
     }
 
     [Fact]
-    // Test 5
+    // Test 4
     public void WhenLeaderWinsElection_InitializesNextIndexForEachFollower()
     {
         var follower = Substitute.For<INode>();
