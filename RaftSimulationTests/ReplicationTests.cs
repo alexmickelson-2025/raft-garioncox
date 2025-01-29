@@ -489,4 +489,51 @@ public class ReplciationTests
 
         await leader.Received().ReceiveAppendEntriesResponse(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), false);
     }
+
+    [Fact]
+    // Test 20
+    public async Task NodeReceivesAppendEntries_WithTermAndIndexThatDoNoMatch_RejectUntilFindMatchingLog()
+    {
+        Node leader = new(0)
+        {
+            Entries = [
+                new Entry(1, "a"),
+                new Entry(1, "b"),
+                new Entry(1, "c"),
+
+            ]
+        };
+
+        var follower = Substitute.For<INode>();
+        follower.Id.Returns(1);
+        follower.Entries.Returns([
+            new Entry(1, "a"),
+            new Entry(10, "b"),
+            new Entry(10, "c"),
+        ]);
+
+        follower.AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>())
+            .Returns(
+                async x =>
+                {
+                    await leader.ReceiveAppendEntriesResponse(follower.Id, follower.Term, follower.Entries.Count, false);
+                    await follower.Received().AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 3, 1, []);
+                },
+                async x =>
+                {
+                    await leader.ReceiveAppendEntriesResponse(follower.Id, follower.Term, follower.Entries.Count, false);
+                    await follower.Received().AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 2, 1, [leader.Entries[2]]);
+                },
+                async x =>
+                {
+                    await leader.ReceiveAppendEntriesResponse(follower.Id, follower.Term, follower.Entries.Count, true);
+                    await follower.Received().AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 1, 1, [leader.Entries[1], leader.Entries[2]]);
+                }
+            );
+
+        leader.Neighbors = new Dictionary<int, INode>() { { follower.Id, follower } };
+        await leader.Heartbeat();
+        await leader.Heartbeat();
+        await leader.Heartbeat();
+    }
 }
