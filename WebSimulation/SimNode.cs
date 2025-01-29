@@ -4,16 +4,16 @@ public class SimNode : INode
 {
     Node node;
     public int Id { get => ((INode)node).Id; set => ((INode)node).Id = value; }
-    public NODESTATE State { get => ((INode)node).State; set => ((INode)node).State = value; }
-    public int Term { get => ((INode)node).Term; set => ((INode)node).Term = value; }
+    public NODESTATE State { get => node.State; set => node.State = value; }
+    public int Term { get => node.Term; set => node.Term = value; }
     public int IntervalScalar { get => INode.IntervalScalar; set => INode.IntervalScalar = value; }
     public int NetworkDelay { get; set; } = 0;
-    public int CommittedLogIndex { get => ((INode)node).CommittedLogIndex; set => ((INode)node).CommittedLogIndex = value; }
-    public List<Entry> Entries { get => ((INode)node).Entries; set => ((INode)node).Entries = value; }
-    public int? CurrentLeader { get => ((INode)node).CurrentLeader; set => ((INode)node).CurrentLeader = value; }
-    public int ElectionTimeout { get => ((INode)node).ElectionTimeout; set => ((INode)node).ElectionTimeout = value; }
-    public bool IsPaused { get => ((INode)node).IsPaused; set => ((INode)node).IsPaused = value; }
-    public Dictionary<int, INode> Neighbors { get => ((INode)node).Neighbors; set => ((INode)node).Neighbors = value; }
+    public int CommittedLogIndex { get => node.CommittedLogIndex; set => node.CommittedLogIndex = value; }
+    public List<Entry> Entries { get => node.Entries; set => node.Entries = value; }
+    public int? CurrentLeader { get => node.CurrentLeader; set => node.CurrentLeader = value; }
+    public int ElectionTimeout { get => node.ElectionTimeout; set => node.ElectionTimeout = value; }
+    public bool IsPaused { get => node.IsPaused; set => node.IsPaused = value; }
+    public Dictionary<int, INode> Neighbors { get => node.Neighbors; set => node.Neighbors = value; }
 
     public SimNode(Node n)
     {
