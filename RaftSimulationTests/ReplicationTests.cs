@@ -308,7 +308,6 @@ public class ReplciationTests
         leader.BecomeLeader();
 
         await leader.ReceiveAppendEntriesResponse(follower.Id, follower.Term, follower.Entries.Count, false);
-        // - if index is greater, it will be decreased by leader
 
         Assert.Equal(2, leader.NextIndexes[follower.Id]);
     }
