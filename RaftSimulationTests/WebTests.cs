@@ -12,25 +12,23 @@ public class WebTests
     {
         var follower = Substitute.For<INode>();
         follower.Id.Returns(1);
-        Node leader = new(0)
+        Node leader = new([follower])
         {
+            Id = 0,
             State = NODESTATE.LEADER,
-            Neighbors = new Dictionary<int, INode>() {
-                {follower.Id, follower}
-            }
         };
 
         Thread t = leader.Run();
         leader.Pause();
 
         Thread.Sleep(400);
-        await follower.Received(0).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        await follower.Received(0).RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
 
         Thread.Sleep(400);
 
         leader.Stop();
         t.Join();
-        await follower.Received(0).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        await follower.Received(0).RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
     }
 
     [Fact]
@@ -38,23 +36,21 @@ public class WebTests
     {
         var follower = Substitute.For<INode>();
         follower.Id.Returns(1);
-        Node leader = new(0)
+        Node leader = new([follower])
         {
+            Id = 0,
             State = NODESTATE.LEADER,
-            Neighbors = new Dictionary<int, INode>() {
-                {follower.Id, follower}
-            }
         };
 
         Thread t = leader.Run();
         leader.Pause();
 
         Thread.Sleep(400);
-        await follower.Received(0).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        await follower.Received(0).RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
         leader.Unpause();
 
         Thread.Sleep(400);
-        await follower.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        await follower.Received().RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
 
         leader.Stop();
         t.Join();
@@ -63,7 +59,7 @@ public class WebTests
     [Fact]
     public void WhenFollowerGetsPaused_ItDoesNotTimeOutToBecomeCandidate()
     {
-        Node node = new(0);
+        Node node = new() { Id = 0 };
 
         node.Pause();
         Thread t = node.Run();
@@ -79,13 +75,7 @@ public class WebTests
         node1.Id.Returns(1);
         var node2 = Substitute.For<INode>();
         node2.Id.Returns(2);
-        Node node = new(0)
-        {
-            Neighbors = new Dictionary<int, INode>() {
-                {node1.Id, node1},
-                {node2.Id, node2},
-            }
-        };
+        Node node = new([node1, node2]) { Id = 0 };
 
         node.Pause();
         node.Unpause();

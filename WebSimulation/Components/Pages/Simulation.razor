@@ -65,9 +65,9 @@
 
     protected override void OnInitialized()
     {
-        var node1 = new Node(0);
-        var node2 = new Node(1);
-        var node3 = new Node(2);
+        var node1 = new Node() { Id = 0 };
+        var node2 = new Node() { Id = 1 };
+        var node3 = new Node() { Id = 2 };
 
         var sim1 = new SimNode(node1);
         var sim2 = new SimNode(node2);
@@ -119,7 +119,7 @@
         TimeoutMultiplier = multiplier;
         foreach (SimNode node in nodes)
         {
-            node.TimeoutMultiplier = multiplier;
+            INode.IntervalScalar = multiplier;
         }
         StateHasChanged();
     }

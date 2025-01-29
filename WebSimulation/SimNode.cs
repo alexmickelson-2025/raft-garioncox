@@ -4,49 +4,36 @@ public class SimNode : INode
 {
     Node node;
     public int Id { get => ((INode)node).Id; set => ((INode)node).Id = value; }
-    public bool HasVoted { get => ((INode)node).HasVoted; set => ((INode)node).HasVoted = value; }
     public NODESTATE State { get => ((INode)node).State; set => ((INode)node).State = value; }
     public int Term { get => ((INode)node).Term; set => ((INode)node).Term = value; }
-    public int? Vote { get => ((INode)node).Vote; set => ((INode)node).Vote = value; }
-    public int ElectionTimeout { get => ((INode)node).ElectionTimeout; set => ((INode)node).ElectionTimeout = value; }
-    public int? CurrentLeader { get => ((INode)node).CurrentLeader; set => ((INode)node).CurrentLeader = value; }
-    public int TimeoutRate { get => ((INode)node).TimeoutRate; set => ((INode)node).TimeoutRate = value; }
+    public int IntervalScalar { get => INode.IntervalScalar; set => INode.IntervalScalar = value; }
     public int NetworkDelay { get; set; } = 0;
     public int CommittedLogIndex { get => ((INode)node).CommittedLogIndex; set => ((INode)node).CommittedLogIndex = value; }
     public List<Entry> Entries { get => ((INode)node).Entries; set => ((INode)node).Entries = value; }
-    public Dictionary<int, INode> Neighbors { get => ((INode)node).Neighbors; set => ((INode)node).Neighbors = value; }
+    public int? CurrentLeader { get => ((INode)node).CurrentLeader; set => ((INode)node).CurrentLeader = value; }
+    public int ElectionTimeout { get => ((INode)node).ElectionTimeout; set => ((INode)node).ElectionTimeout = value; }
     public bool IsPaused { get => ((INode)node).IsPaused; set => ((INode)node).IsPaused = value; }
-    public int TimeoutMultiplier { get => ((INode)node).TimeoutMultiplier; set => ((INode)node).TimeoutMultiplier = value; }
+    public Dictionary<int, INode> Neighbors { get => ((INode)node).Neighbors; set => ((INode)node).Neighbors = value; }
 
     public SimNode(Node n)
     {
         node = n;
     }
 
-    public void BecomeCandidate()
+    public void RespondVote(bool vote)
     {
-        ((INode)node).BecomeCandidate();
+        ((INode)node).RespondVote(vote);
     }
 
-    public void ReceiveVote(bool vote)
+    public bool RequestVote(int id, int term)
     {
-        ((INode)node).ReceiveVote(vote);
-    }
-
-    public bool RequestVoteFor(int id, int term)
-    {
-        return ((INode)node).RequestVoteFor(id, term);
+        return ((INode)node).RequestVote(id, term);
     }
 
     public Task RequestVoteForRPC(int cId, int cTerm)
     {
         Thread.Sleep(NetworkDelay);
         return ((INode)node).RequestVoteForRPC(cId, cTerm);
-    }
-
-    public void RequestVotesRPC()
-    {
-        ((INode)node).RequestVotesRPC();
     }
 
     public Thread Run()
@@ -59,7 +46,6 @@ public class SimNode : INode
         ((INode)node).Stop();
     }
 
-
     public void Pause()
     {
         ((INode)node).Pause();
@@ -70,18 +56,18 @@ public class SimNode : INode
         ((INode)node).Unpause();
     }
 
-    public Task ReceiveAppendEntriesResponse(int followerId, int followerTerm, int followerEntryIndex, bool response)
+    public Task RespondAppendEntries(int followerId, int followerTerm, int followerEntryIndex, bool response)
     {
-        return ((INode)node).ReceiveAppendEntriesResponse(followerId, followerTerm, followerEntryIndex, response);
+        return ((INode)node).RespondAppendEntries(followerId, followerTerm, followerEntryIndex, response);
     }
 
-    public Task AppendEntries(int leaderId, int leaderTerm, int committedLogIndex, int previousEntryIndex, int previousEntryTerm, List<Entry> entries)
+    public Task RequestAppendEntries(int leaderId, int leaderTerm, int committedLogIndex, int previousEntryIndex, int previousEntryTerm, List<Entry> entries)
     {
-        return ((INode)node).AppendEntries(leaderId, leaderTerm, committedLogIndex, previousEntryIndex, previousEntryTerm, entries);
+        return ((INode)node).RequestAppendEntries(leaderId, leaderTerm, committedLogIndex, previousEntryIndex, previousEntryTerm, entries);
     }
 
-    public void ReceiveClientCommand(IClient client, string command)
+    public void ReceiveCommand(IClient client, string command)
     {
-        ((INode)node).ReceiveClientCommand(client, command);
+        ((INode)node).ReceiveCommand(client, command);
     }
 }

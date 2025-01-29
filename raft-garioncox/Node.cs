@@ -19,19 +19,28 @@ public class Node : INode
     public int Term { get; set; } = 0;
     private readonly object TimeoutLock = new();
     public int TimeoutRate { get; set; } = 10;
-    public int TimeoutMultiplier { get; set; } = 1;
+    public static int IntervalScalar { get; set; } = 1;
     private object VoteCountLock = new();
     private int VoteCount = 0;
     public int? Vote { get; set; } = null;
     public bool IsPaused { get; set; } = false;
 
-    public Node(int id)
+    public Node(List<INode> othernNodes)
     {
-        Id = id;
+        foreach (INode node in othernNodes)
+        {
+            Neighbors[node.Id] = node;
+        }
+
         ResetElectionTimeout();
     }
 
-    public async Task AppendEntries(int leaderId, int leaderTerm, int committedLogIndex, int previousEntryIndex, int previousEntryTerm, List<Entry> entries)
+    public Node()
+    {
+        ResetElectionTimeout();
+    }
+
+    public async Task RequestAppendEntries(int leaderId, int leaderTerm, int committedLogIndex, int previousEntryIndex, int previousEntryTerm, List<Entry> entries)
     {
         if (IsPaused) { return; }
 
@@ -52,7 +61,7 @@ public class Node : INode
             didAcceptLogs = Entries.Count == 0 && previousEntryIndex == 0;
         }
 
-        _ = Neighbors[leaderId].ReceiveAppendEntriesResponse(Id, Term, CommittedLogIndex, didAcceptLogs);
+        _ = Neighbors[leaderId].RespondAppendEntries(Id, Term, CommittedLogIndex, didAcceptLogs);
         if (leaderTerm < Term) { return; }
 
         State = NODESTATE.FOLLOWER;
@@ -70,7 +79,7 @@ public class Node : INode
         await Task.CompletedTask;
     }
 
-    public async Task ReceiveAppendEntriesResponse(int followerId, int followerTerm, int followerEntryIndex, bool response)
+    public async Task RespondAppendEntries(int followerId, int followerTerm, int followerEntryIndex, bool response)
     {
         NeighborVote[followerId] = response;
         NextIndexes[followerId] = Entries.Count;
@@ -128,20 +137,20 @@ public class Node : INode
 
             int previousEntryIndex = Entries.Count > 0 ? Entries.Count - 1 : 0;
             int previousEntryTerm = previousEntryIndex != 0 ? Entries[previousEntryIndex].Term : 0;
-            await node.AppendEntries(Id, Term, CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries);
+            await node.RequestAppendEntries(Id, Term, CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries);
         }).ToArray();
 
         return Task.CompletedTask;
     }
 
-    public void ReceiveClientCommand(IClient client, string command)
+    public void ReceiveCommand(IClient client, string command)
     {
         Entry e = new(Term, command);
         Entries.Add(e);
         ClientCommands[(Entries.Count, command)] = client;
     }
 
-    public void ReceiveVote(bool vote)
+    public void RespondVote(bool vote)
     {
         lock (VoteCountLock)
         {
@@ -149,7 +158,7 @@ public class Node : INode
         }
     }
 
-    public bool RequestVoteFor(int cId, int cTerm)
+    public bool RequestVote(int cId, int cTerm)
     {
         if (HasVoted && cTerm <= Term) { return false; }
 
@@ -164,13 +173,13 @@ public class Node : INode
 
         if (HasVoted && cTerm <= Term)
         {
-            candidate.ReceiveVote(false);
+            candidate.RespondVote(false);
         }
         else
         {
             HasVoted = true;
             Vote = cId;
-            candidate.ReceiveVote(true);
+            candidate.RespondVote(true);
         }
 
         return Task.CompletedTask;
@@ -181,7 +190,7 @@ public class Node : INode
         int tally = 1;
         foreach (INode node in Neighbors.Values)
         {
-            bool voted = node.RequestVoteFor(Id, Term);
+            bool voted = node.RequestVote(Id, Term);
             if (voted)
             {
                 tally++;
@@ -209,11 +218,11 @@ public class Node : INode
         {
             if (isLeader)
             {
-                ElectionTimeout = 50 * TimeoutMultiplier;
+                ElectionTimeout = 50 * IntervalScalar;
             }
             else
             {
-                ElectionTimeout = r.Next(150 * TimeoutMultiplier, 301 * TimeoutMultiplier);
+                ElectionTimeout = r.Next(150 * IntervalScalar, 301 * IntervalScalar);
             }
         }
     }

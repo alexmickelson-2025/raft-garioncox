@@ -23,22 +23,16 @@ public class ReplciationTests
         var node2 = Substitute.For<INode>();
         node2.Id.Returns(2);
 
-        Node leader = new(0)
-        {
-            Neighbors = new Dictionary<int, INode>() {
-                {1, follower},
-                {2, node2}
-            }
-        };
+        Node leader = new([follower, node2]) { Id = 0 };
 
         string command = DateTime.MaxValue.ToString();
 
         // ACT
-        leader.ReceiveClientCommand(client, command);
+        leader.ReceiveCommand(client, command);
         leader.Heartbeat();
 
         // ASSERT
-        follower.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        follower.Received().RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
     }
 
     [Fact]
@@ -49,9 +43,9 @@ public class ReplciationTests
         client.Id.Returns(0);
 
         string command = DateTime.MaxValue.ToString();
-        Node leader = new(0);
+        Node leader = new();
 
-        leader.ReceiveClientCommand(client, command);
+        leader.ReceiveCommand(client, command);
 
         Assert.NotEmpty(leader.Entries);
         Entry e = leader.Entries.First();
@@ -63,7 +57,7 @@ public class ReplciationTests
     // Test 3
     public void WhenNodeIsCreated_ItsLogIsEmpty()
     {
-        Node node = new(0);
+        Node node = new();
         Assert.Empty(node.Entries);
     }
 
@@ -73,14 +67,7 @@ public class ReplciationTests
     {
         var follower = Substitute.For<INode>();
         var node2 = Substitute.For<INode>();
-        Node node3 = new(0)
-        {
-            Neighbors = new Dictionary<int, INode>
-            {
-                { 1, follower },
-                { 2, node2 }
-            }
-        };
+        Node node3 = new([follower, node2]) { Id = 0 };
 
         node3.BecomeLeader();
 
@@ -96,19 +83,16 @@ public class ReplciationTests
     {
         Entry e = new(1, "commandstring");
         var follower = Substitute.For<INode>();
-        Node leader = new(0)
+        Node leader = new([follower])
         {
             Entries = [e],
             CommittedLogIndex = 1,
-            Neighbors = new Dictionary<int, INode>
-            {
-                { 1, follower },
-            }
+            Id = 0
         };
 
         leader.Heartbeat();
 
-        follower.Received(1).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        follower.Received(1).RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
     }
 
     [Fact]
@@ -116,12 +100,9 @@ public class ReplciationTests
     public async Task WhenFollowerLearnsLogIsCommitted_ItCommitsThatLog()
     {
         var mockNode = Substitute.For<INode>();
-        Node follower = new(0)
-        {
-            Neighbors = new Dictionary<int, INode>() { { mockNode.Id, mockNode } }
-        };
+        Node follower = new([mockNode]) { Id = 0 };
 
-        await follower.AppendEntries(mockNode.Id, mockNode.Term, mockNode.CommittedLogIndex, 0, 0, []);
+        await follower.RequestAppendEntries(mockNode.Id, mockNode.Term, mockNode.CommittedLogIndex, 0, 0, []);
 
         Assert.Equal(mockNode.CommittedLogIndex, follower.CommittedLogIndex);
     }
@@ -141,14 +122,11 @@ public class ReplciationTests
         var mockNode2 = Substitute.For<INode>();
         mockNode2.Id.Returns(2);
 
-        Node leader = new(0)
-        {
-            Neighbors = new Dictionary<int, INode>() { { mockfollower.Id, mockfollower }, { mockNode2.Id, mockNode2 } },
-        };
+        Node leader = new([mockfollower, mockNode2]) { Id = 0 };
 
-        leader.ReceiveClientCommand(mockClient, "a");
+        leader.ReceiveCommand(mockClient, "a");
 
-        await leader.ReceiveAppendEntriesResponse(mockfollower.Id, mockfollower.Term, mockfollower.CommittedLogIndex, true);
+        await leader.RespondAppendEntries(mockfollower.Id, mockfollower.Term, mockfollower.CommittedLogIndex, true);
 
         Assert.Equal(1, leader.CommittedLogIndex);
     }
@@ -160,9 +138,9 @@ public class ReplciationTests
         var mockClient = Substitute.For<IClient>();
         mockClient.Id.Returns(0);
 
-        Node leader = new(0);
+        Node leader = new() { Id = 0 };
 
-        leader.ReceiveClientCommand(mockClient, "a");
+        leader.ReceiveCommand(mockClient, "a");
         leader.CommitEntry();
 
         Assert.Equal(1, leader.CommittedLogIndex);
@@ -175,12 +153,9 @@ public class ReplciationTests
         Entry e = new(1, "commandstring");
         var leader = Substitute.For<INode>();
         leader.Id.Returns(1);
-        Node follower = new(0)
-        {
-            Neighbors = new Dictionary<int, INode>() { { leader.Id, leader } }
-        };
+        Node follower = new([leader]) { Id = 0 };
 
-        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, [e]);
+        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, [e]);
 
         Assert.NotEmpty(follower.Entries);
         Assert.Equal(e, follower.Entries.First());
@@ -193,17 +168,11 @@ public class ReplciationTests
         Entry e = new(1, "commandstring");
         var leader = Substitute.For<INode>();
         leader.Id.Returns(1);
-        Node follower = new(0)
-        {
-            Neighbors = new Dictionary<int, INode>
-            {
-                { 1, leader },
-            }
-        };
+        Node follower = new([leader]) { Id = 0 };
 
-        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
+        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
 
-        await leader.Received(1).ReceiveAppendEntriesResponse(follower.Id, follower.Term, follower.CommittedLogIndex, Arg.Any<bool>());
+        await leader.Received(1).RespondAppendEntries(follower.Id, follower.Term, follower.CommittedLogIndex, Arg.Any<bool>());
     }
 
     [Fact]
@@ -220,13 +189,10 @@ public class ReplciationTests
         var follower2 = Substitute.For<INode>();
         follower2.Id.Returns(2);
 
-        Node leader = new(0)
-        {
-            Neighbors = new Dictionary<int, INode>() { { follower.Id, follower }, { follower2.Id, follower2 } },
-        };
+        Node leader = new([follower, follower2]) { Id = 0 };
 
-        leader.ReceiveClientCommand(client, "a");
-        await leader.ReceiveAppendEntriesResponse(follower.Id, follower.Term, follower.Entries.Count, true);
+        leader.ReceiveCommand(client, "a");
+        await leader.RespondAppendEntries(follower.Id, follower.Term, follower.Entries.Count, true);
 
         await client.Received().ReceiveLeaderCommitResponse("a", true);
     }
@@ -239,9 +205,9 @@ public class ReplciationTests
         mockClient.Id.Returns(0);
 
         string entry = "a";
-        Node leader = new(0);
+        Node leader = new();
 
-        leader.ReceiveClientCommand(mockClient, entry);
+        leader.ReceiveCommand(mockClient, entry);
         leader.CommitEntry();
 
         Assert.Equal(entry, leader.LogState);
@@ -254,12 +220,9 @@ public class ReplciationTests
         var leader = Substitute.For<INode>();
         leader.Id.Returns(1);
         leader.CommittedLogIndex.Returns(3);
-        Node follower = new(0)
-        {
-            Neighbors = new Dictionary<int, INode> { { 1, leader }, }
-        };
+        Node follower = new([leader]) { Id = 0 };
 
-        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
+        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
 
         Assert.Equal(leader.CommittedLogIndex, follower.CommittedLogIndex);
     }
@@ -270,14 +233,11 @@ public class ReplciationTests
     {
         var follower = Substitute.For<INode>();
         follower.Id.Returns(1);
-        Node leader = new(0)
-        {
-            Neighbors = new Dictionary<int, INode>() { { follower.Id, follower } }
-        };
+        Node leader = new([follower]) { Id = 0 };
 
         leader.Heartbeat();
 
-        follower.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        follower.Received().RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
     }
 
     [Fact]
@@ -286,9 +246,9 @@ public class ReplciationTests
     {
         var leader = Substitute.For<INode>();
         leader.Id.Returns(1);
-        Node follower = new(0)
+        Node follower = new([leader])
         {
-            Neighbors = new Dictionary<int, INode>() { { leader.Id, leader } },
+            Id = 0,
             Entries = [new Entry(0, "a"), new Entry(1, "b")]
         };
 
@@ -299,9 +259,9 @@ public class ReplciationTests
             new Entry(2, "d"),
         ];
 
-        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries);
+        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries);
 
-        await leader.Received().ReceiveAppendEntriesResponse(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), false);
+        await leader.Received().RespondAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), false);
         Assert.Equal(2, follower.Entries.Count);
     }
 
@@ -311,9 +271,9 @@ public class ReplciationTests
     {
         var leader = Substitute.For<INode>();
         leader.Id.Returns(1);
-        Node follower = new(0)
+        Node follower = new([leader])
         {
-            Neighbors = new Dictionary<int, INode>() { { leader.Id, leader } },
+            Id = 0,
             Entries = [new Entry(0, "a"), new Entry(1, "b")]
         };
 
@@ -324,9 +284,9 @@ public class ReplciationTests
             new Entry(2, "d"),
         ];
 
-        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries);
+        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries);
 
-        await leader.Received().ReceiveAppendEntriesResponse(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), true);
+        await leader.Received().RespondAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), true);
         Assert.Equal(newEntries[0].Value, follower.Entries[2].Value);
         Assert.Equal(newEntries[1].Value, follower.Entries[3].Value);
     }
@@ -342,14 +302,14 @@ public class ReplciationTests
         var follower2 = Substitute.For<INode>();
         follower2.Id.Returns(2);
 
-        Node leader = new(0)
+        Node leader = new([follower, follower2])
         {
-            Neighbors = new Dictionary<int, INode>() { { follower.Id, follower }, { follower2.Id, follower2 } },
+            Id = 0,
             Entries = [new Entry(0, "a"), new Entry(1, "b")]
         };
 
         leader.BecomeLeader();
-        await leader.ReceiveAppendEntriesResponse(follower.Id, follower.Term, follower.Entries.Count, false);
+        await leader.RespondAppendEntries(follower.Id, follower.Term, follower.Entries.Count, false);
 
         Assert.Equal(2, leader.NextIndexes[follower.Id]);
     }
@@ -362,9 +322,9 @@ public class ReplciationTests
         var leader = Substitute.For<INode>();
         leader.Id.Returns(1);
 
-        Node follower = new(0)
+        Node follower = new([leader])
         {
-            Neighbors = new Dictionary<int, INode>() { { leader.Id, leader } },
+            Id = 0,
             Entries = [
                 new Entry(1,"a"),
                 new Entry(2, "b"), // Inconsistent log
@@ -376,10 +336,10 @@ public class ReplciationTests
         int previousEntryTerm = 1; // Term is smaller than the inconsistent log
 
         // ACT
-        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, []);
+        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, []);
 
         // ASSERT
-        await leader.Received().ReceiveAppendEntriesResponse(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), false);
+        await leader.Received().RespondAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), false);
         Assert.Single(follower.Entries);
     }
 
@@ -394,14 +354,14 @@ public class ReplciationTests
         var follower2 = Substitute.For<INode>();
         follower2.Id.Returns(2);
 
-        Node leader = new(0)
+        Node leader = new([follower, follower2])
         {
-            Neighbors = new Dictionary<int, INode>() { { follower.Id, follower }, { follower2.Id, follower2 } },
+            Id = 0,
             Entries = [new Entry(0, "a"), new Entry(1, "b")]
         };
 
         leader.BecomeLeader();
-        await leader.ReceiveAppendEntriesResponse(follower.Id, follower.Term, follower.Entries.Count, false);
+        await leader.RespondAppendEntries(follower.Id, follower.Term, follower.Entries.Count, false);
 
         Assert.Equal(2, leader.NextIndexes[follower.Id]);
     }
@@ -414,12 +374,9 @@ public class ReplciationTests
         follower.Id.Returns(1);
         var node2 = Substitute.For<INode>();
         node2.Id.Returns(2);
-        Node leader = new(0)
+        Node leader = new([follower, node2])
         {
-            Neighbors = new Dictionary<int, INode>() {
-                {follower.Id, follower},
-                {node2.Id, node2}
-            },
+            Id = 0,
             Entries = [new Entry(1, "command")],
         };
 
@@ -434,18 +391,16 @@ public class ReplciationTests
     {
         var follower = Substitute.For<INode>();
         follower.Id.Returns(1);
-        Node leader = new(0)
+        Node leader = new([follower])
         {
+            Id = 0,
             Entries = [new Entry(1, "command")],
-            Neighbors = new Dictionary<int, INode>() {
-                {follower.Id, follower}
-            }
         };
 
         leader.BecomeLeader();
         await leader.Heartbeat();
 
-        await follower.Received(2).AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Do<List<Entry>>(Assert.NotEmpty));
+        await follower.Received(2).RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Do<List<Entry>>(Assert.NotEmpty));
     }
 
     [Fact]
@@ -462,13 +417,10 @@ public class ReplciationTests
         var follower2 = Substitute.For<INode>();
         follower2.Id.Returns(2);
 
-        Node leader = new(0)
-        {
-            Neighbors = new Dictionary<int, INode>() { { follower.Id, follower }, { follower2.Id, follower2 } },
-        };
+        Node leader = new([follower, follower2]) { Id = 0 };
 
-        leader.ReceiveClientCommand(client, "a");
-        await leader.ReceiveAppendEntriesResponse(follower.Id, follower.Term, follower.Entries.Count, false);
+        leader.ReceiveCommand(client, "a");
+        await leader.RespondAppendEntries(follower.Id, follower.Term, follower.Entries.Count, false);
 
         await client.Received(0).ReceiveLeaderCommitResponse(Arg.Any<string>(), Arg.Any<bool>());
     }
@@ -480,22 +432,21 @@ public class ReplciationTests
         var leader = Substitute.For<INode>();
         leader.Id.Returns(1);
 
-        Node follower = new(0)
-        {
-            Neighbors = new Dictionary<int, INode>() { { leader.Id, leader } }
-        };
+        Node follower = new([leader]) {Id = 0};
 
-        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 10, 10, [new Entry(10, "a")]);
+        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 10, 10, [new Entry(10, "a")]);
 
-        await leader.Received().ReceiveAppendEntriesResponse(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), false);
+        await leader.Received().RespondAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), false);
     }
 
     [Fact]
     // Test 20
     public async Task NodeReceivesAppendEntries_WithTermAndIndexThatDoNoMatch_RejectUntilFindMatchingLog()
     {
-        Node leader = new(0)
+        var follower = Substitute.For<INode>();
+        Node leader = new([follower])
         {
+            Id = 0,
             Entries = [
                 new Entry(1, "a"),
                 new Entry(1, "b"),
@@ -504,7 +455,6 @@ public class ReplciationTests
             ]
         };
 
-        var follower = Substitute.For<INode>();
         follower.Id.Returns(1);
         follower.Entries.Returns([
             new Entry(1, "a"),
@@ -512,26 +462,25 @@ public class ReplciationTests
             new Entry(10, "c"),
         ]);
 
-        follower.AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>())
+        follower.RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>())
             .Returns(
                 async x =>
                 {
-                    await leader.ReceiveAppendEntriesResponse(follower.Id, follower.Term, follower.Entries.Count, false);
-                    await follower.Received().AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 3, 1, []);
+                    await leader.RespondAppendEntries(follower.Id, follower.Term, follower.Entries.Count, false);
+                    await follower.Received().RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 3, 1, []);
                 },
                 async x =>
                 {
-                    await leader.ReceiveAppendEntriesResponse(follower.Id, follower.Term, follower.Entries.Count, false);
-                    await follower.Received().AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 2, 1, [leader.Entries[2]]);
+                    await leader.RespondAppendEntries(follower.Id, follower.Term, follower.Entries.Count, false);
+                    await follower.Received().RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 2, 1, [leader.Entries[2]]);
                 },
                 async x =>
                 {
-                    await leader.ReceiveAppendEntriesResponse(follower.Id, follower.Term, follower.Entries.Count, true);
-                    await follower.Received().AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 1, 1, [leader.Entries[1], leader.Entries[2]]);
+                    await leader.RespondAppendEntries(follower.Id, follower.Term, follower.Entries.Count, true);
+                    await follower.Received().RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 1, 1, [leader.Entries[1], leader.Entries[2]]);
                 }
             );
 
-        leader.Neighbors = new Dictionary<int, INode>() { { follower.Id, follower } };
         await leader.Heartbeat();
         await leader.Heartbeat();
         await leader.Heartbeat();

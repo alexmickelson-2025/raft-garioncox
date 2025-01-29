@@ -1,5 +1,3 @@
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using NSubstitute;
 using raft_garioncox;
 
@@ -13,13 +11,10 @@ public class SimTests
     {
         // ARRANGE
         var follower = Substitute.For<INode>();
-        Node leader = new(0)
+        Node leader = new([follower])
         {
+            Id = 0,
             State = NODESTATE.LEADER,
-            Neighbors = new Dictionary<int, INode>
-            {
-                { 1, follower },
-            },
             ElectionTimeout = 50
         };
 
@@ -31,7 +26,7 @@ public class SimTests
         t.Join();
 
         // ASSERT
-        follower.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        follower.Received().RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
     }
 
     [Fact]
@@ -39,13 +34,10 @@ public class SimTests
     {
         // ARRANGE
         var follower = Substitute.For<INode>();
-        Node leader = new(0)
+        Node leader = new([follower])
         {
+            Id = 0,
             State = NODESTATE.LEADER,
-            Neighbors = new Dictionary<int, INode>
-            {
-                { 1, follower },
-            },
             ElectionTimeout = 50
         };
 
@@ -57,7 +49,7 @@ public class SimTests
         t.Join();
 
         // ASSERT
-        await follower.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        await follower.Received().RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
     }
 
     [Fact]
@@ -67,12 +59,9 @@ public class SimTests
         var leader = Substitute.For<INode>();
         leader.State.Returns(NODESTATE.LEADER);
         leader.Id.Returns(1);
-        Node follower = new(1)
-        {
-            Neighbors = new Dictionary<int, INode> { { leader.Id, leader }, }
-        };
+        Node follower = new([leader]) { Id = 1 };
 
-        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
+        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
 
         Assert.Equal(leader.Id, follower.CurrentLeader);
     }
@@ -81,7 +70,7 @@ public class SimTests
     // Testing 3
     public void SingleNode_WhenInitialized_ShouldBeInFollowerState()
     {
-        Node n = new(0);
+        Node n = new();
         Assert.Equal(NODESTATE.FOLLOWER, n.State);
     }
 
@@ -89,15 +78,15 @@ public class SimTests
     // Testing 4
     public void WhenFollowerDoesntGetMessageDuringTimeout_ItStartsAnElection()
     {
-        Node n1 = new(0);
         var n2 = Substitute.For<INode>();
+        n2.Id.Returns(1);
         var n3 = Substitute.For<INode>();
-        n1.ElectionTimeout = 80;
-        n1.Neighbors = new Dictionary<int, INode>
-            {
-                { 1, n2 },
-                { 2, n3 }
-            };
+        n2.Id.Returns(2);
+        Node n1 = new([n2, n3])
+        {
+            Id = 0,
+            ElectionTimeout = 80,
+        };
 
         // ACT
         Thread t = n1.Run();
@@ -118,7 +107,7 @@ public class SimTests
         int matches = 0;
         for (int i = 0; i < 100; i++)
         {
-            Node n1 = new(0);
+            Node n1 = new() { Id = 0 };
             if (previousTimeout == n1.ElectionTimeout)
             {
                 matches++;
@@ -136,8 +125,9 @@ public class SimTests
     // Testing 5
     public void ElectionTimeReset_WithRandomValueBetween150and300ms()
     {
-        Node n1 = new(0)
+        Node n1 = new()
         {
+            Id = 0,
             ElectionTimeout = 10
         };
 
@@ -150,8 +140,9 @@ public class SimTests
     // Testing 6
     public void WhenNewElectionBegins_TermIsIncrementedBy1()
     {
-        Node n = new(0)
+        Node n = new()
         {
+            Id = 0,
             ElectionTimeout = 10
         };
         int previousTerm = n.Term;
@@ -176,18 +167,10 @@ public class SimTests
         leader.Id.Returns(0);
         var n2 = Substitute.For<INode>();
         n2.Id.Returns(1);
-        Node follower = new(0)
-        {
-            Neighbors = new Dictionary<int, INode>()
-            {
-                { leader.Id, leader },
-                { n2.Id, n2 },
-            }
-        };
-
+        Node follower = new([leader, n2]) { Id = 0 };
 
         // ACT
-        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
+        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
 
         // ASSERT
         Assert.True(follower.State == NODESTATE.FOLLOWER);
@@ -197,7 +180,7 @@ public class SimTests
     // Testing 8
     public void SingleNode_WhenItBecomesCandidate_ShouldBecomeLeader()
     {
-        Node n = new(0);
+        Node n = new() { Id = 0 };
         n.BecomeCandidate();
         Assert.Equal(NODESTATE.LEADER, n.State);
         Assert.Equal(n.Id, n.CurrentLeader);
@@ -208,23 +191,18 @@ public class SimTests
     public void Cluster_WhenOneBecomesCandidate_ShouldBecomeLeader()
     {
         var n2 = Substitute.For<INode>();
+        n2.Id.Returns(1);
         var n3 = Substitute.For<INode>();
-        Node n1 = new(0)
-        {
-            Neighbors = new Dictionary<int, INode>()
-            {
-                { 1, n2 },
-                { 2, n3 },
-            }
-        };
+        n2.Id.Returns(2);
+        Node n1 = new([n2, n3]) { Id = 0 };
 
-        n2.RequestVoteFor(Arg.Any<int>(), Arg.Any<int>()).Returns(true);
-        n3.RequestVoteFor(Arg.Any<int>(), Arg.Any<int>()).Returns(true);
+        n2.RequestVote(Arg.Any<int>(), Arg.Any<int>()).Returns(true);
+        n3.RequestVote(Arg.Any<int>(), Arg.Any<int>()).Returns(true);
 
         n1.BecomeCandidate();
 
-        n2.Received().RequestVoteFor(Arg.Any<int>(), Arg.Any<int>());
-        n3.Received().RequestVoteFor(Arg.Any<int>(), Arg.Any<int>());
+        n2.Received().RequestVote(Arg.Any<int>(), Arg.Any<int>());
+        n3.Received().RequestVote(Arg.Any<int>(), Arg.Any<int>());
         Assert.Equal(NODESTATE.LEADER, n1.State);
     }
 
@@ -234,15 +212,9 @@ public class SimTests
         var candidate = Substitute.For<INode>();
         candidate.Id.Returns(1);
         candidate.Term.Returns(0);
-        Node follower = new(0)
-        {
-            Neighbors = new Dictionary<int, INode>()
-            {
-                { candidate.Id, candidate },
-            }
-        };
+        Node follower = new([candidate]) { Id = 0 };
 
-        follower.RequestVoteFor(candidate.Id, candidate.Term);
+        follower.RequestVote(candidate.Id, candidate.Term);
 
         Assert.Equal(candidate.Id, follower.Vote);
         Assert.True(follower.HasVoted);
@@ -252,15 +224,16 @@ public class SimTests
     // Testing 9
     public void CandidateReceivesMajorityVotes_WhileWaitinForUnresponsiveNode_StillBecomesLeader()
     {
-        Node candidate = new(0)
+        Node candidate = new()
         {
+            Id = 0,
             ElectionTimeout = 10
         };
         var n1 = Substitute.For<INode>();
         var n2 = Substitute.For<INode>();
 
-        n2.When(n => n.RequestVoteFor(Arg.Any<int>(), Arg.Any<int>()))
-            .Do(x => candidate.ReceiveVote(true));
+        n2.When(n => n.RequestVote(Arg.Any<int>(), Arg.Any<int>()))
+            .Do(x => candidate.RespondVote(true));
 
 
         Thread t = candidate.Run();
@@ -281,26 +254,23 @@ public class SimTests
         candidate.Id = 1;
         candidate.Term = 1;
 
-        Node follower = new(0)
+        Node follower = new([candidate])
         {
+            Id = 0,
             Term = 0,
             HasVoted = false,
-            Neighbors = new Dictionary<int, INode>()
-            {
-                { candidate.Id, candidate },
-            }
         };
 
         follower.RequestVoteForRPC(candidate.Id, candidate.Term);
 
-        candidate.Received().ReceiveVote(true);
+        candidate.Received().RespondVote(true);
     }
 
     [Fact]
     // Testing 11
     public void SingleNode_WhenItBecomesCandidate_ShouldVoteForItself()
     {
-        Node n = new(0);
+        Node n = new() { Id = 0 };
 
         Assert.Equal(0, n.Term);
         Assert.False(n.HasVoted);
@@ -320,17 +290,14 @@ public class SimTests
         n2.Term.Returns(1);
         n2.Id.Returns(1);
         n2.CommittedLogIndex.Returns(0);
-        Node n1 = new(0)
+        Node n1 = new([n2])
         {
+            Id = 0,
             Term = 0,
             State = NODESTATE.CANDIDATE,
-            Neighbors = new Dictionary<int, INode>()
-            {
-                {n2.Id, n2}
-            }
         };
 
-        await n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex, 0, 0, []);
+        await n1.RequestAppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex, 0, 0, []);
 
         Assert.Equal(NODESTATE.FOLLOWER, n1.State);
     }
@@ -344,17 +311,14 @@ public class SimTests
         n2.Id.Returns(1);
         n2.CommittedLogIndex.Returns(0);
 
-        Node n1 = new(0)
+        Node n1 = new([n2])
         {
+            Id = 0,
             Term = 0,
             State = NODESTATE.CANDIDATE,
-            Neighbors = new Dictionary<int, INode>()
-            {
-                {n2.Id, n2}
-            }
         };
 
-        await n1.AppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex, 0, 0, []);
+        await n1.RequestAppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex, 0, 0, []);
 
         Assert.Equal(NODESTATE.FOLLOWER, n1.State);
     }
@@ -363,14 +327,14 @@ public class SimTests
     // Testing 14
     public void IfNodeReceivesSecondVoteRequest_ShouldRespondNo()
     {
-        Node n1 = new(0);
+        Node n1 = new() { Id = 0 };
         var n2 = Substitute.For<INode>();
         n2.Term.Returns(0);
         n2.Id.Returns(1);
         n1.Term = 0;
-        n1.RequestVoteFor(n2.Id, n2.Term);
+        n1.RequestVote(n2.Id, n2.Term);
 
-        bool actual = n1.RequestVoteFor(n2.Id, n2.Term);
+        bool actual = n1.RequestVote(n2.Id, n2.Term);
 
         Assert.False(actual);
     }
@@ -379,15 +343,15 @@ public class SimTests
     // Testing 15
     public void IfNodeReceivesSecondVoteRequestForFutureTurm_ShouldRespondYes()
     {
-        Node n1 = new(0);
+        Node n1 = new() { Id = 0 };
         var n2 = Substitute.For<INode>();
         n2.Term.Returns(0);
         n2.Id.Returns(1);
         n1.Term = 0;
-        n1.RequestVoteFor(n2.Id, n2.Term);
+        n1.RequestVote(n2.Id, n2.Term);
 
         n2.Term = 1;
-        bool actual = n1.RequestVoteFor(n2.Id, n2.Term);
+        bool actual = n1.RequestVote(n2.Id, n2.Term);
 
         Assert.True(actual);
     }
@@ -398,15 +362,11 @@ public class SimTests
     {
         var n1 = Substitute.For<INode>();
         var n2 = Substitute.For<INode>();
-        Node candidate = new(0)
+        Node candidate = new([n1, n2])
         {
+            Id = 0,
             Term = 1,
             State = NODESTATE.CANDIDATE,
-            Neighbors = new Dictionary<int, INode>()
-                {
-                    {1, n1},
-                    {2, n2}
-                },
             ElectionTimeout = 10
         };
 
@@ -428,13 +388,10 @@ public class SimTests
         mockNode.Id.Returns(1);
         mockNode.Term.Returns(0);
         mockNode.CommittedLogIndex.Returns(0);
-        Node n1 = new(0)
-        {
-            Neighbors = new() { { mockNode.Id, mockNode } }
-        };
+        Node n1 = new([mockNode]) { Id = 0 };
 
-        await n1.AppendEntries(mockNode.Id, mockNode.Term, mockNode.CommittedLogIndex, 0, 0, []);
-        await mockNode.Received().ReceiveAppendEntriesResponse(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<bool>());
+        await n1.RequestAppendEntries(mockNode.Id, mockNode.Term, mockNode.CommittedLogIndex, 0, 0, []);
+        await mockNode.Received().RespondAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<bool>());
     }
 
     [Fact]
@@ -444,15 +401,15 @@ public class SimTests
         INode mockLeader = Substitute.For<INode>();
         mockLeader.Term = 0;
         mockLeader.CommittedLogIndex = 0;
-        Node n1 = new(0)
+        Node n1 = new([mockLeader])
         {
+            Id = 0,
             Term = 1,
-            Neighbors = new() { { mockLeader.Id, mockLeader } }
         };
 
-        await n1.AppendEntries(mockLeader.Id, mockLeader.Term, mockLeader.CommittedLogIndex, 0, 0, []);
+        await n1.RequestAppendEntries(mockLeader.Id, mockLeader.Term, mockLeader.CommittedLogIndex, 0, 0, []);
 
-        await mockLeader.Received().ReceiveAppendEntriesResponse(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<bool>());
+        await mockLeader.Received().RespondAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<bool>());
     }
 
     [Fact]
@@ -460,39 +417,34 @@ public class SimTests
     public void WhenCandidateWinsElection_ItImmediatelySendsHeartbeat()
     {
         var n1 = Substitute.For<INode>();
-        Node candidate = new(0)
+        Node candidate = new([n1])
         {
+            Id = 0,
             ElectionTimeout = 10,
-            Neighbors = new Dictionary<int, INode>()
-                {
-                    {1, n1}
-                }
         };
 
         n1.When(n => n.RequestVoteForRPC(Arg.Any<int>(), Arg.Any<int>()))
-            .Do(n => candidate.ReceiveVote(true));
+            .Do(n => candidate.RespondVote(true));
 
         candidate.BecomeLeader();
 
-        n1.Received().AppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        n1.Received().RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
     }
 
     [Fact]
     public async Task WhenFollowerReceivesHeartbeatFromLeader_ItUpdatesItsTermToMatchLeader()
     {
-        Node follower = new(0);
         var leader = Substitute.For<INode>();
         leader.Term.Returns(2);
         leader.Id.Returns(1);
         leader.CommittedLogIndex.Returns(0);
+        Node follower = new([leader])
+        {
+            Id = 0,
+            CurrentLeader = 1
+        };
 
-        follower.CurrentLeader = 1;
-        follower.Neighbors = new Dictionary<int, INode>()
-            {
-                {leader.Id, leader}
-            };
-
-        await follower.AppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
+        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
 
         Assert.Equal(leader.Term, follower.Term);
     }
