@@ -10,6 +10,7 @@ public class Node : INode
     public List<Entry> Entries { get; set; } = [];
     public bool HasVoted { get; set; } = false;
     public bool IsRunning = false;
+    public int IntervalScalar { get; set; } = 1;
     public string LogState { get; private set; } = "";
     private int Majority => (int)Math.Ceiling((Neighbors.Keys.Count + 1.0) / 2);
     public Dictionary<(int, string), IClient> ClientCommands { get; set; } = [];
@@ -19,7 +20,6 @@ public class Node : INode
     public int Term { get; set; } = 0;
     private readonly object TimeoutLock = new();
     public int TimeoutRate { get; set; } = 10;
-    public static int IntervalScalar { get; set; } = 1;
     private object VoteCountLock = new();
     private int VoteCount = 0;
     public int? Vote { get; set; } = null;

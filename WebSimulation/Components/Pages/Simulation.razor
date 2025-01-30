@@ -41,6 +41,7 @@
                         style="width: @percentageRemaining%;"></div>
                 </div>
             </div>
+            @maxIntervalMilliseconds
         </div>
     }
 </div>
@@ -50,7 +51,7 @@
     <input type="range" class="form-range" id="NetworkDelay" value=0 @onchange='HandleNetworkDelayChange'>
 
     <label for="TimeoutMultiplier" class="form-label">Timeout Multiplier: @TimeoutMultiplier</label>
-    <input type="range" class="form-range" min=1 max=10 value=1 id="TimeoutMultiplier"
+    <input type="range" class="form-range" min=10 max=100 value=1 id="TimeoutMultiplier"
         @onchange='HandleTimeoutMultiplierChange'>
 </div>
 
@@ -59,7 +60,7 @@
 
 @code {
     List<SimNode> nodes = [];
-    int TimeoutMultiplier = 1;
+    int TimeoutMultiplier = 10;
     int NetworkDelay = 0;
     public required Timer timer;
 
@@ -119,7 +120,8 @@
         TimeoutMultiplier = multiplier;
         foreach (SimNode node in nodes)
         {
-            INode.IntervalScalar = multiplier;
+            node.IntervalScalar = multiplier;
+            node.ResetElectionTimeout(node.State == NODESTATE.LEADER);
         }
         StateHasChanged();
     }

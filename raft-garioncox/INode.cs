@@ -8,7 +8,7 @@ public interface INode
     int ElectionTimeout { get; set; } // in ms
     List<Entry> Entries { get; set; }
     int Id { get; set; }
-    public static int IntervalScalar { get; set; }
+    public int IntervalScalar { get; set; }
     public bool IsPaused { get; set; }
     // bool HasVoted { get; set; }
     Dictionary<int, INode> Neighbors { get; set; }
