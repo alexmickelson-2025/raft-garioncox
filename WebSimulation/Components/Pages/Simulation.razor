@@ -15,7 +15,7 @@
         var timeoutRemaining = n.ElectionTimeout;
         var maxIntervalMilliseconds = n.State == NODESTATE.LEADER ? 50.0 * TimeoutMultiplier : 300.0 * TimeoutMultiplier;
         var percentageRemaining = (int)(100 * (Math.Abs(n.ElectionTimeout) / maxIntervalMilliseconds));
-        <div class="col border border p-3 m-2 rounded-3">
+        <div class="col border p-3 m-2 rounded-3">
             <div class="d-flex flex-row">
                 <h2>Node @n.Id</h2>
                 @if (n.IsPaused)
@@ -41,7 +41,21 @@
                         style="width: @percentageRemaining%;"></div>
                 </div>
             </div>
-            @(maxIntervalMilliseconds)
+
+            <div className="pt-5">
+                @if (n.Entries.Count > 0)
+                {
+                    @foreach (Entry e in n.Entries)
+                    {
+                        <div>[T@(e.Term)] @(e.Value)</div>
+                    }
+                    <div className="border">@(n.Entries.Count)</div>
+                }
+                else
+                {
+                    <div>No entries</div>
+                }
+            </div>
         </div>
     }
 </div>
@@ -85,6 +99,13 @@
         sim1.ResetElectionTimeout();
         sim2.ResetElectionTimeout();
         sim3.ResetElectionTimeout();
+
+        sim1.Entries = [
+        new Entry(0, "a"),
+new Entry(0, "b"),
+new Entry(1, "c"),
+new Entry(2, "d"),
+];
 
         nodes = [sim1, sim2, sim3];
         StateHasChanged();
