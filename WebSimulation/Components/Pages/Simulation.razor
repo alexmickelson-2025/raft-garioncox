@@ -13,9 +13,9 @@
     <div class="form-group pt-2">
         <label for="nodeSelect">Node</label>
         <select id="nodeSelect" class="form-select" @bind=SelectedNode>
+            <option value="0">Node 0</option>
             <option value="1">Node 1</option>
             <option value="2">Node 2</option>
-            <option value="3">Node 3</option>
         </select>
     </div>
     <div class="form-group pt-2">
@@ -103,6 +103,7 @@
     public required Timer timer;
     public string Command = "";
     public string SelectedNode { get; set; } = "1";
+    public SimClient simClient = new(0);
 
     protected override void OnInitialized()
     {
@@ -125,13 +126,6 @@
         sim1.ResetElectionTimeout();
         sim2.ResetElectionTimeout();
         sim3.ResetElectionTimeout();
-
-        sim1.Entries = [
-        new Entry(0, "a"),
-new Entry(0, "b"),
-new Entry(1, "c"),
-new Entry(2, "d"),
-];
 
         nodes = [sim1, sim2, sim3];
         StateHasChanged();
@@ -184,5 +178,6 @@ new Entry(2, "d"),
     public void HandleSendCommand()
     {
         int nodeId = int.Parse(SelectedNode);
+        nodes[nodeId].ReceiveCommand(simClient, Command);
     }
 }

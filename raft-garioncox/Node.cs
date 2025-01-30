@@ -40,63 +40,6 @@ public class Node : INode
         ResetElectionTimeout();
     }
 
-    public async Task RequestAppendEntries(int leaderId, int leaderTerm, int committedLogIndex, int previousEntryIndex, int previousEntryTerm, List<Entry> entries)
-    {
-        if (IsPaused) { return; }
-
-        bool didAcceptLogs;
-
-        try
-        {
-            Entry previousEntry = Entries[previousEntryIndex];
-            didAcceptLogs = previousEntry.Term == previousEntryTerm;
-
-            if (previousEntry.Term > previousEntryTerm)
-            {
-                Entries = Entries.Take(previousEntryIndex).ToList();
-            }
-        }
-        catch
-        {
-            didAcceptLogs = Entries.Count == 0 && previousEntryIndex == 0;
-        }
-
-        _ = Neighbors[leaderId].RespondAppendEntries(Id, Term, CommittedLogIndex, didAcceptLogs);
-        if (leaderTerm < Term) { return; }
-
-        State = NODESTATE.FOLLOWER;
-        CurrentLeader = leaderId;
-        CommittedLogIndex = committedLogIndex;
-        Term = leaderTerm;
-
-        ResetElectionTimeout();
-
-        if (entries.Count != 0 && didAcceptLogs)
-        {
-            Entries = Entries.Concat(entries).ToList();
-        }
-
-        await Task.CompletedTask;
-    }
-
-    public async Task RespondAppendEntries(int followerId, int followerTerm, int followerEntryIndex, bool response)
-    {
-        NeighborCommitVote[followerId] = response;
-        if (!response)
-        {
-            NextIndexes[followerId] = NextIndexes[followerId] - 1;
-        }
-
-        int tally = 1 + NeighborCommitVote.Values.Count(vote => vote);
-
-        if (tally >= Majority)
-        {
-            CommitEntry();
-        }
-
-        await Task.CompletedTask;
-    }
-
     public void BecomeCandidate()
     {
         State = NODESTATE.CANDIDATE;
@@ -123,6 +66,12 @@ public class Node : INode
     {
         LogState = Entries[CommittedLogIndex].Value;
         CommittedLogIndex++;
+
+        foreach (int key in NeighborCommitVote.Keys)
+        {
+            NeighborCommitVote[key] = false;
+        }
+
         ClientCommands[(CommittedLogIndex, LogState)].ReceiveLeaderCommitResponse(LogState, true);
     }
 
@@ -134,13 +83,26 @@ public class Node : INode
             try
             {
                 int nextIndex = NextIndexes[node.Id];
-                newEntries = Entries.Take(nextIndex).ToList();
+                newEntries = Entries.Skip(nextIndex).ToList();
             }
             catch
             { }
 
-            int previousEntryIndex = Entries.Count > 0 ? Entries.Count - 1 : 0;
-            int previousEntryTerm = previousEntryIndex != 0 ? Entries[previousEntryIndex].Term : 0;
+            int previousEntryIndex = NextIndexes[node.Id] - 1;
+            if (previousEntryIndex < 0)
+            {
+                previousEntryIndex = 0;
+            }
+
+            int previousEntryTerm = 0;
+
+            try
+            {
+                previousEntryTerm = Entries[previousEntryIndex].Term;
+            }
+            catch
+            { }
+
             await node.RequestAppendEntries(Id, Term, CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries);
         }).ToArray();
 
@@ -191,6 +153,10 @@ public class Node : INode
         // VoteCount + 1 since we always vote for ourselves
         if (VoteCount + 1 >= Majority)
         {
+            lock (VoteCountLock)
+            {
+                VoteCount = 0;
+            }
             BecomeLeader();
         }
     }
@@ -218,6 +184,72 @@ public class Node : INode
             {
                 ElectionTimeout = r.Next(150 * IntervalScalar, 301 * IntervalScalar);
             }
+        }
+    }
+
+    public async Task RequestAppendEntries(int leaderId, int leaderTerm, int committedLogIndex, int previousEntryIndex, int previousEntryTerm, List<Entry> entries)
+    {
+        if (IsPaused) { return; }
+
+        bool didAcceptLogs;
+
+        try
+        {
+            Entry previousEntry = Entries[previousEntryIndex];
+            didAcceptLogs = previousEntry.Term == previousEntryTerm;
+
+            if (previousEntry.Term > previousEntryTerm)
+            {
+                Entries = Entries.Take(previousEntryIndex).ToList();
+            }
+        }
+        catch
+        {
+            didAcceptLogs = Entries.Count == 0 && previousEntryIndex == 0;
+        }
+
+        _ = Neighbors[leaderId].RespondAppendEntries(Id, Term, CommittedLogIndex, didAcceptLogs);
+        if (leaderTerm < Term) { return; }
+
+        State = NODESTATE.FOLLOWER;
+        CurrentLeader = leaderId;
+        CommittedLogIndex = committedLogIndex;
+        Term = leaderTerm;
+
+        ResetElectionTimeout();
+
+        if (entries.Count != 0 && didAcceptLogs)
+        {
+            Entries = Entries.Concat(entries).ToList();
+        }
+
+        await Task.CompletedTask;
+    }
+
+    public async Task RespondAppendEntries(int followerId, int followerTerm, int followerEntryIndex, bool response)
+    {
+        NeighborCommitVote[followerId] = response;
+        if (!response)
+        {
+            NextIndexes[followerId] = NextIndexes[followerId] - 1;
+        }
+        else
+        {
+            NextIndexes[followerId] = Entries.Count;
+        }
+
+        TryCommit();
+
+        await Task.CompletedTask;
+    }
+
+    public void TryCommit()
+    {
+        int tally = 1 + NeighborCommitVote.Values.Count(vote => vote);
+
+        if (tally >= Majority)
+        {
+            CommitEntry();
         }
     }
 

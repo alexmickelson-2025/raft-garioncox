@@ -23,7 +23,11 @@ public class ReplciationTests
         var node2 = Substitute.For<INode>();
         node2.Id.Returns(2);
 
-        Node leader = new([follower, node2]) { Id = 0 };
+        Node leader = new([follower, node2])
+        {
+            Id = 0,
+            NextIndexes = new Dictionary<int, int>() { { follower.Id, 0 } }
+        };
 
         string command = DateTime.MaxValue.ToString();
 
@@ -83,11 +87,13 @@ public class ReplciationTests
     {
         Entry e = new(1, "commandstring");
         var follower = Substitute.For<INode>();
+        follower.Id.Returns(1);
         Node leader = new([follower])
         {
             Entries = [e],
             CommittedLogIndex = 1,
-            Id = 0
+            Id = 0,
+            NextIndexes = new Dictionary<int, int>() { { follower.Id, 0 } }
         };
 
         leader.Heartbeat();
@@ -233,7 +239,11 @@ public class ReplciationTests
     {
         var follower = Substitute.For<INode>();
         follower.Id.Returns(1);
-        Node leader = new([follower]) { Id = 0 };
+        Node leader = new([follower])
+        {
+            Id = 0,
+            NextIndexes = new Dictionary<int, int>() { { follower.Id, 0 } }
+        };
 
         leader.Heartbeat();
 
@@ -489,11 +499,117 @@ public class ReplciationTests
     }
 
     [Fact]
-    public void IntegrationTest()
+    public async Task GivenLeaderHasNewLogs_OnNextHeartbeat_ItSendsThem()
     {
-        var node1 = Substitute.For<INode>();
-        Node leader = new([node1]) { Id = 0 };
+        var client = Substitute.For<IClient>();
+        client.Id.Returns(0);
+        var follower = Substitute.For<INode>();
+        follower.Id.Returns(1);
+        Node leader = new([follower])
+        {
+            Id = 1,
+            Term = 1,
+            Entries = [new Entry(0, "a"), new Entry(0, "b"), new Entry(1, "c")],
+            NextIndexes = new Dictionary<int, int>() { { follower.Id, 3 } }
+        };
 
-        leader.BecomeCandidate();
+        leader.ReceiveCommand(client, "d");
+        Assert.Equal(4, leader.Entries.Count);
+
+        await leader.Heartbeat();
+        await follower.Received().RequestAppendEntries(
+                leader.Id,
+                leader.Term,
+                leader.CommittedLogIndex,
+                2,
+                leader.Entries[2].Term,
+                Arg.Any<List<Entry>>()
+            );
     }
+
+    [Fact]
+    public async Task GivenFollowerHasNoLogs_WhenItReceivesAppendEntriesWithNewLogs_ItAppendsThem()
+    {
+        var leader = Substitute.For<INode>();
+        leader.Id.Returns(0);
+        Node follower = new([leader]) { Id = 1 };
+
+        await follower.RequestAppendEntries(leader.Id, leader.Term, 0, 0, 0, [new Entry(0, "a")]);
+
+        Assert.NotEmpty(follower.Entries);
+    }
+
+    [Fact]
+    public async Task GivenFollowerHasLogs_WhenItReceivesAppendEntriesWithNewLogs_ItAppendsThem()
+    {
+        List<Entry> entries = [
+            new Entry(0, "a"),
+            new Entry(0, "b"),
+            new Entry(1, "c"),
+            new Entry(1, "d"),
+        ];
+
+        var leader = Substitute.For<INode>();
+        leader.Id.Returns(0);
+        Node follower = new([leader])
+        {
+            Id = 1,
+            Entries = [entries[0], entries[1], entries[2]]
+        };
+
+        await follower.RequestAppendEntries(leader.Id, leader.Term, 0, 0, 0, [entries[3]]);
+
+        Assert.Equal(4, follower.Entries.Count);
+    }
+
+    // [Fact]
+    // public async Task IntegrationTest()
+    // {
+    //     SimClient client = new(0);
+    //     Node follower = new() { Id = 1 };
+    //     Node leader = new([follower]) { Id = 0 };
+    //     follower.Neighbors = new Dictionary<int, INode>() { { leader.Id, leader } };
+
+    //     leader.BecomeCandidate();
+    //     Assert.Equal(NODESTATE.LEADER, leader.State);
+    //     Assert.Equal(1, leader.Term);
+    //     Assert.Equal(0, leader.NextIndexes[follower.Id]);
+
+    //     Assert.Equal(leader.Id, follower.CurrentLeader);
+
+    //     Assert.Empty(leader.Entries);
+    //     Assert.Empty(follower.Entries);
+
+    //     leader.ReceiveCommand(client, "a");
+
+    //     Assert.NotEmpty(leader.Entries);
+    //     Assert.Empty(follower.Entries);
+
+    //     await leader.Heartbeat();
+    //     Assert.NotEmpty(leader.Entries);
+    //     Assert.NotEmpty(follower.Entries);
+
+    //     await leader.Heartbeat();
+    //     Assert.NotEmpty(leader.Entries);
+    //     Assert.NotEmpty(follower.Entries);
+
+    //     leader.ReceiveCommand(client, "b");
+    //     Assert.Equal(2, leader.Entries.Count);
+    //     Assert.Equal(1, leader.CommittedLogIndex);
+    //     Assert.Single(follower.Entries);
+    //     Assert.Equal(1, follower.CommittedLogIndex);
+
+    //     await leader.Heartbeat();
+    //     Assert.Equal(2, leader.CommittedLogIndex);
+    //     Assert.Equal(2, leader.Entries.Count);
+    //     Assert.Equal(2, follower.CommittedLogIndex);
+    //     Assert.Equal(2, follower.Entries.Count);
+
+    //     // leader.ReceiveCommand(client, "c");
+    //     // leader.ReceiveCommand(client, "d");
+    //     // Assert.Equal(4, leader.Entries.Count);
+    //     // Assert.Equal(2, leader.CommittedLogIndex);
+    //     // Assert.Equal(2, leader.Entries.Count);
+    //     // Assert.Equal(2, leader.CommittedLogIndex);
+    // }
 }

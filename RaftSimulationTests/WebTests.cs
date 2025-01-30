@@ -40,6 +40,7 @@ public class WebTests
         {
             Id = 0,
             State = NODESTATE.LEADER,
+            NextIndexes = new Dictionary<int, int>() { { follower.Id, 0 } }
         };
 
         Thread t = leader.Run();

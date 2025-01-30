@@ -11,11 +11,13 @@ public class SimTests
     {
         // ARRANGE
         var follower = Substitute.For<INode>();
+        follower.Id.Returns(1);
         Node leader = new([follower])
         {
             Id = 0,
             State = NODESTATE.LEADER,
-            ElectionTimeout = 50
+            ElectionTimeout = 50,
+            NextIndexes = new Dictionary<int, int>() { { follower.Id, 0 } }
         };
 
         // ACT
@@ -34,11 +36,14 @@ public class SimTests
     {
         // ARRANGE
         var follower = Substitute.For<INode>();
+        follower.Id.Returns(1);
+
         Node leader = new([follower])
         {
             Id = 0,
             State = NODESTATE.LEADER,
-            ElectionTimeout = 50
+            ElectionTimeout = 50,
+            NextIndexes = new Dictionary<int, int>() { { follower.Id, 0 } }
         };
 
         // ACT
