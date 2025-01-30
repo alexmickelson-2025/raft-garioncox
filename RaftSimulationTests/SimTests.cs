@@ -194,27 +194,29 @@ public class SimTests
         n2.Id.Returns(1);
         var n3 = Substitute.For<INode>();
         n2.Id.Returns(2);
-        Node n1 = new([n2, n3]) { Id = 0 };
+        Node candidate = new([n2, n3]) { Id = 0 };
 
-        n2.RequestVote(Arg.Any<int>(), Arg.Any<int>()).Returns(true);
-        n3.RequestVote(Arg.Any<int>(), Arg.Any<int>()).Returns(true);
+        n2.When(n => n.RequestVoteRPC(Arg.Any<int>(), Arg.Any<int>()))
+            .Do(x => candidate.RespondVote(true));
+        n3.When(n => n.RequestVoteRPC(Arg.Any<int>(), Arg.Any<int>()))
+            .Do(x => candidate.RespondVote(true));
 
-        n1.BecomeCandidate();
+        candidate.BecomeCandidate();
 
-        n2.Received().RequestVote(Arg.Any<int>(), Arg.Any<int>());
-        n3.Received().RequestVote(Arg.Any<int>(), Arg.Any<int>());
-        Assert.Equal(NODESTATE.LEADER, n1.State);
+        n2.Received().RequestVoteRPC(Arg.Any<int>(), Arg.Any<int>());
+        n3.Received().RequestVoteRPC(Arg.Any<int>(), Arg.Any<int>());
+        Assert.Equal(NODESTATE.LEADER, candidate.State);
     }
 
     [Fact]
-    public void NodeVotesForCandidate_WhenVoteRequested()
+    public async void NodeVotesForCandidate_WhenVoteRequested()
     {
         var candidate = Substitute.For<INode>();
         candidate.Id.Returns(1);
         candidate.Term.Returns(0);
         Node follower = new([candidate]) { Id = 0 };
 
-        follower.RequestVote(candidate.Id, candidate.Term);
+        await follower.RequestVoteRPC(candidate.Id, candidate.Term);
 
         Assert.Equal(candidate.Id, follower.Vote);
         Assert.True(follower.HasVoted);
@@ -232,7 +234,7 @@ public class SimTests
         var n1 = Substitute.For<INode>();
         var n2 = Substitute.For<INode>();
 
-        n2.When(n => n.RequestVote(Arg.Any<int>(), Arg.Any<int>()))
+        n2.When(n => n.RequestVoteRPC(Arg.Any<int>(), Arg.Any<int>()))
             .Do(x => candidate.RespondVote(true));
 
 
@@ -261,7 +263,7 @@ public class SimTests
             HasVoted = false,
         };
 
-        follower.RequestVoteForRPC(candidate.Id, candidate.Term);
+        follower.RequestVoteRPC(candidate.Id, candidate.Term);
 
         candidate.Received().RespondVote(true);
     }
@@ -325,35 +327,52 @@ public class SimTests
 
     [Fact]
     // Testing 14
-    public void IfNodeReceivesSecondVoteRequest_ShouldRespondNo()
+    public async Task IfNodeReceivesSecondVoteRequest_ShouldRespondNo()
     {
-        Node n1 = new() { Id = 0 };
         var n2 = Substitute.For<INode>();
         n2.Term.Returns(0);
         n2.Id.Returns(1);
-        n1.Term = 0;
-        n1.RequestVote(n2.Id, n2.Term);
 
-        bool actual = n1.RequestVote(n2.Id, n2.Term);
+        var n3 = Substitute.For<INode>();
+        n3.Term.Returns(0);
+        n3.Id.Returns(2);
 
-        Assert.False(actual);
+        Node n1 = new([n2, n3])
+        {
+            Id = 0,
+            Term = 0
+        };
+
+        await n1.RequestVoteRPC(n2.Id, n2.Term);
+        await n1.RequestVoteRPC(n3.Id, n3.Term);
+
+        n2.Received().RespondVote(true);
+        n3.Received().RespondVote(false);
     }
 
     [Fact]
     // Testing 15
-    public void IfNodeReceivesSecondVoteRequestForFutureTurm_ShouldRespondYes()
+    public async Task IfNodeReceivesSecondVoteRequestForFutureTurm_ShouldRespondYes()
     {
-        Node n1 = new() { Id = 0 };
         var n2 = Substitute.For<INode>();
         n2.Term.Returns(0);
         n2.Id.Returns(1);
-        n1.Term = 0;
-        n1.RequestVote(n2.Id, n2.Term);
 
-        n2.Term = 1;
-        bool actual = n1.RequestVote(n2.Id, n2.Term);
+        var n3 = Substitute.For<INode>();
+        n3.Term.Returns(1);
+        n3.Id.Returns(2);
 
-        Assert.True(actual);
+        Node n1 = new([n2, n3])
+        {
+            Id = 0,
+            Term = 0
+        };
+
+        await n1.RequestVoteRPC(n2.Id, n2.Term);
+        await n1.RequestVoteRPC(n3.Id, n3.Term);
+
+        n2.Received().RespondVote(true);
+        n3.Received().RespondVote(true);
     }
 
     [Fact]
@@ -361,7 +380,9 @@ public class SimTests
     public void GivenCandidate_WhenElectionTimerExpiresInsideElection_NewElectionStarted()
     {
         var n1 = Substitute.For<INode>();
+        n1.Id.Returns(1);
         var n2 = Substitute.For<INode>();
+        n2.Id.Returns(2);
         Node candidate = new([n1, n2])
         {
             Id = 0,
@@ -377,6 +398,7 @@ public class SimTests
 
         t.Join();
 
+        Assert.Equal(NODESTATE.CANDIDATE, candidate.State);
         Assert.True(candidate.Term > 1);
     }
 
@@ -423,7 +445,7 @@ public class SimTests
             ElectionTimeout = 10,
         };
 
-        n1.When(n => n.RequestVoteForRPC(Arg.Any<int>(), Arg.Any<int>()))
+        n1.When(n => n.RequestVoteRPC(Arg.Any<int>(), Arg.Any<int>()))
             .Do(n => candidate.RespondVote(true));
 
         candidate.BecomeLeader();

@@ -9,6 +9,39 @@
 
 <hr>
 
+<form @onsubmit="HandleSendCommand">
+    <div class="form-group pt-2">
+        <label for="nodeSelect">Node</label>
+        <select id="nodeSelect" class="form-select" @bind=SelectedNode>
+            <option value="1">Node 1</option>
+            <option value="2">Node 2</option>
+            <option value="3">Node 3</option>
+        </select>
+    </div>
+    <div class="form-group pt-2">
+        <label for="commandInput">Command</label>
+        <input id="commandInput" class="form-control" maxlength="10" @bind=Command>
+    </div>
+    <button type="submit" class="btn btn-primary mt-3">Send</button>
+</form>
+
+<hr>
+
+
+<div class="row p-3 col-4">
+    <label for="NetworkDelay" class="form-label">Network Delay: @NetworkDelay</label>
+    <input type="range" class="form-range" id="NetworkDelay" value=0 @onchange='HandleNetworkDelayChange'>
+
+    <label for="TimeoutMultiplier" class="form-label">Timeout Multiplier: @TimeoutMultiplier</label>
+    <input type="range" class="form-range" min=10 max=100 value=10 id="TimeoutMultiplier"
+        @onchange='HandleTimeoutMultiplierChange'>
+</div>
+
+<button @onclick="Start" class="btn btn-primary">Start</button>
+<button @onclick="Stop" class="btn btn-danger">Stop</button>
+
+<hr>
+
 <div class="row p-3 col-12">
     @foreach (var n in nodes)
     {
@@ -42,14 +75,17 @@
                 </div>
             </div>
 
+            <div>State: @n.LogState</div>
+            <div>Commit Index: @n.CommittedLogIndex</div>
+
+
             <div className="pt-5">
                 @if (n.Entries.Count > 0)
                 {
-                    @foreach (Entry e in n.Entries)
+                    @for (int i = 0; i < n.Entries.Count; i++)
                     {
-                        <div>[T@(e.Term)] @(e.Value)</div>
+                        <div>#@i [T@(n.Entries[i].Term)] @(n.Entries[i].Value) @(n.CommittedLogIndex >= i ? "committed" : "")</div>
                     }
-                    <div className="border">@(n.Entries.Count)</div>
                 }
                 else
                 {
@@ -60,23 +96,13 @@
     }
 </div>
 
-<div class="row p-3 col-4">
-    <label for="NetworkDelay" class="form-label">Network Delay: @NetworkDelay</label>
-    <input type="range" class="form-range" id="NetworkDelay" value=0 @onchange='HandleNetworkDelayChange'>
-
-    <label for="TimeoutMultiplier" class="form-label">Timeout Multiplier: @TimeoutMultiplier</label>
-    <input type="range" class="form-range" min=10 max=100 value=1 id="TimeoutMultiplier"
-        @onchange='HandleTimeoutMultiplierChange'>
-</div>
-
-<button @onclick="Start" class="btn btn-primary">Start</button>
-<button @onclick="Stop" class="btn btn-danger">Stop</button>
-
 @code {
     List<SimNode> nodes = [];
     int TimeoutMultiplier = 10;
     int NetworkDelay = 0;
     public required Timer timer;
+    public string Command = "";
+    public string SelectedNode { get; set; } = "1";
 
     protected override void OnInitialized()
     {
@@ -153,5 +179,10 @@ new Entry(2, "d"),
             node.ResetElectionTimeout(node.State == NODESTATE.LEADER);
         }
         StateHasChanged();
+    }
+
+    public void HandleSendCommand()
+    {
+        int nodeId = int.Parse(SelectedNode);
     }
 }

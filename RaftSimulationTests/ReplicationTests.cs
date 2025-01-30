@@ -73,7 +73,7 @@ public class ReplciationTests
 
         foreach (var key in node3.Neighbors.Keys)
         {
-            Assert.Equal(node3.Entries.Count + 1, node3.NextIndexes[key]);
+            Assert.Equal(node3.Entries.Count, node3.NextIndexes[key]);
         }
     }
 
@@ -309,9 +309,10 @@ public class ReplciationTests
         };
 
         leader.BecomeLeader();
-        await leader.RespondAppendEntries(follower.Id, follower.Term, follower.Entries.Count, false);
-
         Assert.Equal(2, leader.NextIndexes[follower.Id]);
+
+        await leader.RespondAppendEntries(follower.Id, follower.Term, follower.Entries.Count, false);
+        Assert.Equal(1, leader.NextIndexes[follower.Id]);
     }
 
     [Fact]
@@ -363,7 +364,7 @@ public class ReplciationTests
         leader.BecomeLeader();
         await leader.RespondAppendEntries(follower.Id, follower.Term, follower.Entries.Count, false);
 
-        Assert.Equal(2, leader.NextIndexes[follower.Id]);
+        Assert.Equal(1, leader.NextIndexes[follower.Id]);
     }
 
     [Fact]
@@ -419,6 +420,7 @@ public class ReplciationTests
 
         Node leader = new([follower, follower2]) { Id = 0 };
 
+        leader.BecomeLeader();
         leader.ReceiveCommand(client, "a");
         await leader.RespondAppendEntries(follower.Id, follower.Term, follower.Entries.Count, false);
 
@@ -432,7 +434,7 @@ public class ReplciationTests
         var leader = Substitute.For<INode>();
         leader.Id.Returns(1);
 
-        Node follower = new([leader]) {Id = 0};
+        Node follower = new([leader]) { Id = 0 };
 
         await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 10, 10, [new Entry(10, "a")]);
 
@@ -484,5 +486,14 @@ public class ReplciationTests
         await leader.Heartbeat();
         await leader.Heartbeat();
         await leader.Heartbeat();
+    }
+
+    [Fact]
+    public void IntegrationTest()
+    {
+        var node1 = Substitute.For<INode>();
+        Node leader = new([node1]) { Id = 0 };
+
+        leader.BecomeCandidate();
     }
 }

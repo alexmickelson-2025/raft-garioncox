@@ -14,6 +14,7 @@ public class SimNode : INode
     public bool IsPaused { get => node.IsPaused; set => node.IsPaused = value; }
     public Dictionary<int, INode> Neighbors { get => node.Neighbors; set => node.Neighbors = value; }
     public int IntervalScalar { get => ((INode)node).IntervalScalar; set => ((INode)node).IntervalScalar = value; }
+    public string LogState { get => node.LogState; }
 
     public SimNode(Node n)
     {
@@ -25,15 +26,15 @@ public class SimNode : INode
         ((INode)node).RespondVote(vote);
     }
 
-    public bool RequestVote(int id, int term)
-    {
-        return ((INode)node).RequestVote(id, term);
-    }
+    // public bool RequestVote(int id, int term)
+    // {
+    //     return ((INode)node).RequestVote(id, term);
+    // }
 
-    public Task RequestVoteForRPC(int cId, int cTerm)
+    public Task RequestVoteRPC(int cId, int cTerm)
     {
         Thread.Sleep(NetworkDelay);
-        return ((INode)node).RequestVoteForRPC(cId, cTerm);
+        return ((INode)node).RequestVoteRPC(cId, cTerm);
     }
 
     public Thread Run()

@@ -16,7 +16,7 @@ public class Node : INode
     public Dictionary<(int, string), IClient> ClientCommands { get; set; } = [];
     public Dictionary<int, INode> Neighbors { get; set; } = [];
     public Dictionary<int, int> NextIndexes { get; set; } = [];
-    public Dictionary<int, bool> NeighborVote { get; set; } = [];
+    public Dictionary<int, bool> NeighborCommitVote { get; set; } = [];
     public int Term { get; set; } = 0;
     private readonly object TimeoutLock = new();
     public int TimeoutRate { get; set; } = 10;
@@ -81,10 +81,13 @@ public class Node : INode
 
     public async Task RespondAppendEntries(int followerId, int followerTerm, int followerEntryIndex, bool response)
     {
-        NeighborVote[followerId] = response;
-        NextIndexes[followerId] = Entries.Count;
+        NeighborCommitVote[followerId] = response;
+        if (!response)
+        {
+            NextIndexes[followerId] = NextIndexes[followerId] - 1;
+        }
 
-        int tally = 1 + NeighborVote.Values.Count(vote => vote);
+        int tally = 1 + NeighborCommitVote.Values.Count(vote => vote);
 
         if (tally >= Majority)
         {
@@ -101,7 +104,7 @@ public class Node : INode
         Vote = Id;
         HasVoted = true;
 
-        RequestVotes();
+        RequestVotesRPC();
     }
 
     public void BecomeLeader()
@@ -111,9 +114,9 @@ public class Node : INode
         ResetElectionTimeout(true);
         foreach (int key in Neighbors.Keys)
         {
-            NextIndexes[key] = Entries.Count + 1;
-            Heartbeat();
+            NextIndexes[key] = Entries.Count;
         }
+        Heartbeat();
     }
 
     public void CommitEntry()
@@ -152,24 +155,21 @@ public class Node : INode
     }
 
     public void RespondVote(bool vote)
+    // Follower calls this on a candidate
     {
         lock (VoteCountLock)
         {
             VoteCount++;
         }
+
+        TryBecomeLeader();
     }
 
-    public bool RequestVote(int cId, int cTerm)
+    public Task RequestVoteRPC(int cId, int cTerm)
+    // Candidate calls this function on a follower
     {
-        if (HasVoted && cTerm <= Term) { return false; }
+        if (IsPaused) { return Task.CompletedTask; }
 
-        HasVoted = true;
-        Vote = cId;
-        return true;
-    }
-
-    public Task RequestVoteForRPC(int cId, int cTerm)
-    {
         INode candidate = Neighbors[cId];
 
         if (HasVoted && cTerm <= Term)
@@ -186,19 +186,10 @@ public class Node : INode
         return Task.CompletedTask;
     }
 
-    private void RequestVotes()
+    public void TryBecomeLeader()
     {
-        int tally = 1;
-        foreach (INode node in Neighbors.Values)
-        {
-            bool voted = node.RequestVote(Id, Term);
-            if (voted)
-            {
-                tally++;
-            }
-        }
-
-        if (tally >= Majority)
+        // VoteCount + 1 since we always vote for ourselves
+        if (VoteCount + 1 >= Majority)
         {
             BecomeLeader();
         }
@@ -208,8 +199,10 @@ public class Node : INode
     {
         foreach (INode node in Neighbors.Values)
         {
-            node.RequestVoteForRPC(Id, Term);
+            node.RequestVoteRPC(Id, Term);
         }
+
+        TryBecomeLeader();
     }
 
     public void ResetElectionTimeout(bool isLeader = false)
@@ -253,10 +246,7 @@ public class Node : INode
                     {
                         if (State == NODESTATE.CANDIDATE)
                         {
-                            if (VoteCount >= Majority)
-                            {
-                                State = NODESTATE.LEADER;
-                            }
+                            TryBecomeLeader();
                         }
 
                         if (ElectionTimeout <= 0)

@@ -21,8 +21,8 @@ public interface INode
     public Task RespondAppendEntries(int followerId, int followerTerm, int followerEntryIndex, bool response);
     public void ReceiveCommand(IClient client, string command);
     public void RespondVote(bool vote);
-    public bool RequestVote(int id, int term);
-    public Task RequestVoteForRPC(int cId, int cTerm);
+    // public bool RequestVote(int id, int term);
+    public Task RequestVoteRPC(int cId, int cTerm);
     // public void RequestVotesRPC();
     public Thread Run();
     public void Stop();
