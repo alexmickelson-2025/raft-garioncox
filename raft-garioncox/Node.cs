@@ -108,6 +108,7 @@ public class Node : INode
     {
         State = NODESTATE.LEADER;
         CurrentLeader = Id;
+        ResetElectionTimeout(true);
         foreach (int key in Neighbors.Keys)
         {
             NextIndexes[key] = Entries.Count + 1;

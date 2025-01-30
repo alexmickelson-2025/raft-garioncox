@@ -41,7 +41,7 @@
                         style="width: @percentageRemaining%;"></div>
                 </div>
             </div>
-            @maxIntervalMilliseconds
+            @(maxIntervalMilliseconds)
         </div>
     }
 </div>
@@ -77,6 +77,14 @@
         sim1.Neighbors = new Dictionary<int, INode>() { { sim2.Id, sim2 }, { sim3.Id, sim3 } };
         sim2.Neighbors = new Dictionary<int, INode>() { { sim1.Id, sim1 }, { sim3.Id, sim3 } };
         sim3.Neighbors = new Dictionary<int, INode>() { { sim1.Id, sim1 }, { sim2.Id, sim2 } };
+
+        sim1.IntervalScalar = TimeoutMultiplier;
+        sim2.IntervalScalar = TimeoutMultiplier;
+        sim3.IntervalScalar = TimeoutMultiplier;
+
+        sim1.ResetElectionTimeout();
+        sim2.ResetElectionTimeout();
+        sim3.ResetElectionTimeout();
 
         nodes = [sim1, sim2, sim3];
         StateHasChanged();

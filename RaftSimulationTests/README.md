@@ -2,7 +2,7 @@
 2)  [x] when a leader receives a command from the client, it is appended to its log
 3)  [x] when a node is new, its log is empty
 4)  [x] when a leader wins an election, it initializes the nextIndex for each follower to the index just after the last one it its log
-5)  [x] leaders maintain an "nextIndex" for each follower that is the index of the next log entry the leader will send to that follower
+5)  [ ] leaders maintain an "nextIndex" for each follower that is the index of the next log entry the leader will send to that follower
 6)  [x] Highest committed index from the leader is included in AppendEntries RPC's
 7)  [x] When a follower learns that a log entry is committed, it applies the entry to its local state machine
 8)  [x] when the leader has received a majority confirmation of a log, it commits it
@@ -22,7 +22,7 @@
 17) [x] if a leader does not response from a follower, the leader continues to send the log entries in subsequent heartbeats  
 18) [x] if a leader cannot commit an entry, it does not send a response to the client
 19) [x] if a node receives an appendentries with a logs that are too far in the future from your local state, you should reject the appendentries
-20) [ ] if a node receives and appendentries with a term and index that do not match, you will reject the appendentry until you find a matching log 
+20) [x] if a node receives and appendentries with a term and index that do not match, you will reject the appendentry until you find a matching log 
 
 #### Before UI again
 21) [x] when node is a leader with an election loop, then they get paused, other nodes do not get heartbeast for 400 ms
