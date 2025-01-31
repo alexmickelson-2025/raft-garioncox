@@ -14,7 +14,7 @@ public interface INode
     NODESTATE State { get; set; }
     int Term { get; set; }
     public Task RequestAppendEntries(int leaderId, int leaderTerm, int committedLogIndex, int previousEntryIndex, int previousEntryTerm, List<Entry> entries);
-    public Task RespondAppendEntries(int followerId, int followerTerm, int followerEntryIndex, bool response);
+    public Task RespondAppendEntries(RespondEntriesDTO dto);
     public void ReceiveCommand(IClient client, string command);
     public void RespondVote(VoteResponseDTO dto);
     public Task RequestVoteRPC(VoteRequestDTO dto);

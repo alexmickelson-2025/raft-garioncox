@@ -419,7 +419,7 @@ public class SimTests
         Node n1 = new([mockNode]) { Id = 0 };
 
         await n1.RequestAppendEntries(mockNode.Id, mockNode.Term, mockNode.CommittedLogIndex, 0, 0, []);
-        await mockNode.Received().RespondAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<bool>());
+        await mockNode.Received().RespondAppendEntries(Arg.Any<RespondEntriesDTO>());
     }
 
     [Fact]
@@ -437,7 +437,7 @@ public class SimTests
 
         await n1.RequestAppendEntries(mockLeader.Id, mockLeader.Term, mockLeader.CommittedLogIndex, 0, 0, []);
 
-        await mockLeader.Received().RespondAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<bool>());
+        await mockLeader.Received().RespondAppendEntries(Arg.Is<RespondEntriesDTO>(dto => dto.Response == false));
     }
 
     [Fact]

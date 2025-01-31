@@ -53,9 +53,9 @@ public class SimNode : INode
         ((INode)node).Unpause();
     }
 
-    public Task RespondAppendEntries(int followerId, int followerTerm, int followerEntryIndex, bool response)
+    public Task RespondAppendEntries(RespondEntriesDTO dto)
     {
-        return ((INode)node).RespondAppendEntries(followerId, followerTerm, followerEntryIndex, response);
+        return ((INode)node).RespondAppendEntries(dto);
     }
 
     public Task RequestAppendEntries(int leaderId, int leaderTerm, int committedLogIndex, int previousEntryIndex, int previousEntryTerm, List<Entry> entries)

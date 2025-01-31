@@ -215,7 +215,12 @@ public class Node : INode
             didAcceptLogs = Entries.Count == 0 && previousEntryIndex == 0;
         }
 
-        _ = Neighbors[leaderId].RespondAppendEntries(Id, Term, CommittedLogIndex, didAcceptLogs);
+        if (leaderTerm < Term)
+        {
+            didAcceptLogs = false;
+        }
+
+        _ = Neighbors[leaderId].RespondAppendEntries(new RespondEntriesDTO(Id, Term, CommittedLogIndex, didAcceptLogs));
         if (leaderTerm < Term) { return; }
 
         State = NODESTATE.FOLLOWER;
@@ -233,16 +238,16 @@ public class Node : INode
         await Task.CompletedTask;
     }
 
-    public async Task RespondAppendEntries(int followerId, int followerTerm, int followerEntryIndex, bool response)
+    public async Task RespondAppendEntries(RespondEntriesDTO dto)
     {
-        NeighborCommitVote[followerId] = response;
-        if (!response)
+        NeighborCommitVote[dto.FollowerId] = dto.Response;
+        if (!dto.Response)
         {
-            NextIndexes[followerId] = NextIndexes[followerId] - 1;
+            NextIndexes[dto.FollowerId] = NextIndexes[dto.FollowerId] - 1;
         }
         else
         {
-            NextIndexes[followerId] = Entries.Count;
+            NextIndexes[dto.FollowerId] = Entries.Count;
         }
 
         TryCommit();

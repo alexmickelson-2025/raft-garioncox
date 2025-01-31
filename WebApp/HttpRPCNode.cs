@@ -36,7 +36,7 @@
 //         }
 //     }
 
-//     public async Task RespondAppendEntries(RespondEntriesData response)
+//     public async Task RespondAppendEntries(RespondEntriesDTO response)
 //     {
 //         try
 //         {

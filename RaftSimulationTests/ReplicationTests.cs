@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using NSubstitute;
 using NSubstitute.Core.Arguments;
 using raft_garioncox;
+using raft_garioncox.Records;
 
 namespace RaftSimulationTests;
 
@@ -132,7 +133,7 @@ public class ReplciationTests
 
         leader.ReceiveCommand(mockClient, "a");
 
-        await leader.RespondAppendEntries(mockfollower.Id, mockfollower.Term, mockfollower.CommittedLogIndex, true);
+        await leader.RespondAppendEntries(new RespondEntriesDTO(mockfollower.Id, mockfollower.Term, mockfollower.CommittedLogIndex, true));
 
         Assert.Equal(1, leader.CommittedLogIndex);
     }
@@ -178,7 +179,11 @@ public class ReplciationTests
 
         await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
 
-        await leader.Received(1).RespondAppendEntries(follower.Id, follower.Term, follower.CommittedLogIndex, Arg.Any<bool>());
+        await leader.Received(1).RespondAppendEntries(Arg.Is<RespondEntriesDTO>(dto =>
+            dto.FollowerId == follower.Id &&
+            dto.FollowerTerm == follower.Term &&
+            dto.FollowerEntryIndex == follower.CommittedLogIndex
+        ));
     }
 
     [Fact]
@@ -198,7 +203,7 @@ public class ReplciationTests
         Node leader = new([follower, follower2]) { Id = 0 };
 
         leader.ReceiveCommand(client, "a");
-        await leader.RespondAppendEntries(follower.Id, follower.Term, follower.Entries.Count, true);
+        await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, follower.Term, follower.Entries.Count, true));
 
         await client.Received().ReceiveLeaderCommitResponse("a", true);
     }
@@ -271,7 +276,7 @@ public class ReplciationTests
 
         await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries);
 
-        await leader.Received().RespondAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), false);
+        await leader.Received().RespondAppendEntries(Arg.Is<RespondEntriesDTO>(dto => dto.Response == false));
         Assert.Equal(2, follower.Entries.Count);
     }
 
@@ -296,7 +301,7 @@ public class ReplciationTests
 
         await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries);
 
-        await leader.Received().RespondAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), true);
+        await leader.Received().RespondAppendEntries(Arg.Is<RespondEntriesDTO>(dto => dto.Response == true));
         Assert.Equal(newEntries[0].Value, follower.Entries[2].Value);
         Assert.Equal(newEntries[1].Value, follower.Entries[3].Value);
     }
@@ -321,7 +326,7 @@ public class ReplciationTests
         leader.BecomeLeader();
         Assert.Equal(2, leader.NextIndexes[follower.Id]);
 
-        await leader.RespondAppendEntries(follower.Id, follower.Term, follower.Entries.Count, false);
+        await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, follower.Term, follower.Entries.Count, false));
         Assert.Equal(1, leader.NextIndexes[follower.Id]);
     }
 
@@ -350,7 +355,7 @@ public class ReplciationTests
         await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, []);
 
         // ASSERT
-        await leader.Received().RespondAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), false);
+        await leader.Received().RespondAppendEntries(Arg.Is<RespondEntriesDTO>(dto => dto.Response == false));
         Assert.Single(follower.Entries);
     }
 
@@ -372,7 +377,7 @@ public class ReplciationTests
         };
 
         leader.BecomeLeader();
-        await leader.RespondAppendEntries(follower.Id, follower.Term, follower.Entries.Count, false);
+        await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, follower.Term, follower.Entries.Count, false));
 
         Assert.Equal(1, leader.NextIndexes[follower.Id]);
     }
@@ -432,7 +437,7 @@ public class ReplciationTests
 
         leader.BecomeLeader();
         leader.ReceiveCommand(client, "a");
-        await leader.RespondAppendEntries(follower.Id, follower.Term, follower.Entries.Count, false);
+        await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, follower.Term, follower.Entries.Count, false));
 
         await client.Received(0).ReceiveLeaderCommitResponse(Arg.Any<string>(), Arg.Any<bool>());
     }
@@ -448,7 +453,7 @@ public class ReplciationTests
 
         await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 10, 10, [new Entry(10, "a")]);
 
-        await leader.Received().RespondAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), false);
+        await leader.Received().RespondAppendEntries(Arg.Is<RespondEntriesDTO>(dto => dto.Response == false));
     }
 
     [Fact]
@@ -478,17 +483,17 @@ public class ReplciationTests
             .Returns(
                 async x =>
                 {
-                    await leader.RespondAppendEntries(follower.Id, follower.Term, follower.Entries.Count, false);
+                    await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, follower.Term, follower.Entries.Count, false));
                     await follower.Received().RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 3, 1, []);
                 },
                 async x =>
                 {
-                    await leader.RespondAppendEntries(follower.Id, follower.Term, follower.Entries.Count, false);
+                    await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, follower.Term, follower.Entries.Count, false));
                     await follower.Received().RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 2, 1, [leader.Entries[2]]);
                 },
                 async x =>
                 {
-                    await leader.RespondAppendEntries(follower.Id, follower.Term, follower.Entries.Count, true);
+                    await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, follower.Term, follower.Entries.Count, true));
                     await follower.Received().RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 1, 1, [leader.Entries[1], leader.Entries[2]]);
                 }
             );
@@ -561,55 +566,4 @@ public class ReplciationTests
 
         Assert.Equal(4, follower.Entries.Count);
     }
-
-    // [Fact]
-    // public async Task IntegrationTest()
-    // {
-    //     SimClient client = new(0);
-    //     Node follower = new() { Id = 1 };
-    //     Node leader = new([follower]) { Id = 0 };
-    //     follower.Neighbors = new Dictionary<int, INode>() { { leader.Id, leader } };
-
-    //     leader.BecomeCandidate();
-    //     Assert.Equal(NODESTATE.LEADER, leader.State);
-    //     Assert.Equal(1, leader.Term);
-    //     Assert.Equal(0, leader.NextIndexes[follower.Id]);
-
-    //     Assert.Equal(leader.Id, follower.CurrentLeader);
-
-    //     Assert.Empty(leader.Entries);
-    //     Assert.Empty(follower.Entries);
-
-    //     leader.ReceiveCommand(client, "a");
-
-    //     Assert.NotEmpty(leader.Entries);
-    //     Assert.Empty(follower.Entries);
-
-    //     await leader.Heartbeat();
-    //     Assert.NotEmpty(leader.Entries);
-    //     Assert.NotEmpty(follower.Entries);
-
-    //     await leader.Heartbeat();
-    //     Assert.NotEmpty(leader.Entries);
-    //     Assert.NotEmpty(follower.Entries);
-
-    //     leader.ReceiveCommand(client, "b");
-    //     Assert.Equal(2, leader.Entries.Count);
-    //     Assert.Equal(1, leader.CommittedLogIndex);
-    //     Assert.Single(follower.Entries);
-    //     Assert.Equal(1, follower.CommittedLogIndex);
-
-    //     await leader.Heartbeat();
-    //     Assert.Equal(2, leader.CommittedLogIndex);
-    //     Assert.Equal(2, leader.Entries.Count);
-    //     Assert.Equal(2, follower.CommittedLogIndex);
-    //     Assert.Equal(2, follower.Entries.Count);
-
-    //     // leader.ReceiveCommand(client, "c");
-    //     // leader.ReceiveCommand(client, "d");
-    //     // Assert.Equal(4, leader.Entries.Count);
-    //     // Assert.Equal(2, leader.CommittedLogIndex);
-    //     // Assert.Equal(2, leader.Entries.Count);
-    //     // Assert.Equal(2, leader.CommittedLogIndex);
-    // }
 }
