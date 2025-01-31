@@ -12,7 +12,7 @@
 //         Url = url;
 //     }
 
-//     public async Task RequestAppendEntries(AppendEntriesData request)
+//     public async Task RequestAppendEntries(AppendEntriesDTO request)
 //     {
 //         try
 //         {

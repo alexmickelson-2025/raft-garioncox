@@ -105,7 +105,7 @@ public class Node : INode
             catch
             { }
 
-            await node.RequestAppendEntries(Id, Term, CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries);
+            await node.RequestAppendEntries(new AppendEntriesDTO(Id, Term, CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries));
         }).ToArray();
 
         return Task.CompletedTask;
@@ -194,7 +194,7 @@ public class Node : INode
         }
     }
 
-    public async Task RequestAppendEntries(int leaderId, int leaderTerm, int committedLogIndex, int previousEntryIndex, int previousEntryTerm, List<Entry> entries)
+    public async Task RequestAppendEntries(AppendEntriesDTO dto)
     {
         if (IsPaused) { return; }
 
@@ -202,37 +202,37 @@ public class Node : INode
 
         try
         {
-            Entry previousEntry = Entries[previousEntryIndex];
-            didAcceptLogs = previousEntry.Term == previousEntryTerm;
+            Entry previousEntry = Entries[dto.PreviousEntryIndex];
+            didAcceptLogs = previousEntry.Term == dto.PreviousEntryTerm;
 
-            if (previousEntry.Term > previousEntryTerm)
+            if (previousEntry.Term > dto.PreviousEntryTerm)
             {
-                Entries = Entries.Take(previousEntryIndex).ToList();
+                Entries = Entries.Take(dto.PreviousEntryIndex).ToList();
             }
         }
         catch
         {
-            didAcceptLogs = Entries.Count == 0 && previousEntryIndex == 0;
+            didAcceptLogs = Entries.Count == 0 && dto.PreviousEntryIndex == 0;
         }
 
-        if (leaderTerm < Term)
+        if (dto.LeaderTerm < Term)
         {
             didAcceptLogs = false;
         }
 
-        _ = Neighbors[leaderId].RespondAppendEntries(new RespondEntriesDTO(Id, Term, CommittedLogIndex, didAcceptLogs));
-        if (leaderTerm < Term) { return; }
+        _ = Neighbors[dto.LeaderId].RespondAppendEntries(new RespondEntriesDTO(Id, Term, CommittedLogIndex, didAcceptLogs));
+        if (dto.LeaderTerm < Term) { return; }
 
         State = NODESTATE.FOLLOWER;
-        CurrentLeader = leaderId;
-        CommittedLogIndex = committedLogIndex;
-        Term = leaderTerm;
+        CurrentLeader = dto.LeaderId;
+        CommittedLogIndex = dto.CommittedLogIndex;
+        Term = dto.LeaderTerm;
 
         ResetElectionTimeout();
 
-        if (entries.Count != 0 && didAcceptLogs)
+        if (dto.Entries.Count != 0 && didAcceptLogs)
         {
-            Entries = Entries.Concat(entries).ToList();
+            Entries = Entries.Concat(dto.Entries).ToList();
         }
 
         await Task.CompletedTask;

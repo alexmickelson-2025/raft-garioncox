@@ -2,6 +2,7 @@ using System.Data.Common;
 using System.Security.Cryptography.X509Certificates;
 using NSubstitute;
 using raft_garioncox;
+using raft_garioncox.Records;
 
 namespace RaftSimulationTests;
 
@@ -22,13 +23,13 @@ public class WebTests
         leader.Pause();
 
         Thread.Sleep(400);
-        await follower.Received(0).RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        await follower.Received(0).RequestAppendEntries(Arg.Any<AppendEntriesDTO>());
 
         Thread.Sleep(400);
 
         leader.Stop();
         t.Join();
-        await follower.Received(0).RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        await follower.Received(0).RequestAppendEntries(Arg.Any<AppendEntriesDTO>());
     }
 
     [Fact]
@@ -47,11 +48,11 @@ public class WebTests
         leader.Pause();
 
         Thread.Sleep(400);
-        await follower.Received(0).RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        await follower.Received(0).RequestAppendEntries(Arg.Any<AppendEntriesDTO>());
         leader.Unpause();
 
         Thread.Sleep(400);
-        await follower.Received().RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        await follower.Received().RequestAppendEntries(Arg.Any<AppendEntriesDTO>());
 
         leader.Stop();
         t.Join();

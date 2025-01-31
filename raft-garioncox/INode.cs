@@ -13,7 +13,7 @@ public interface INode
     Dictionary<int, INode> Neighbors { get; set; }
     NODESTATE State { get; set; }
     int Term { get; set; }
-    public Task RequestAppendEntries(int leaderId, int leaderTerm, int committedLogIndex, int previousEntryIndex, int previousEntryTerm, List<Entry> entries);
+    public Task RequestAppendEntries(AppendEntriesDTO dto);
     public Task RespondAppendEntries(RespondEntriesDTO dto);
     public void ReceiveCommand(IClient client, string command);
     public void RespondVote(VoteResponseDTO dto);

@@ -5,6 +5,7 @@ using NSubstitute;
 using NSubstitute.Core.Arguments;
 using raft_garioncox;
 using raft_garioncox.Records;
+using WebSimulation.Components;
 
 namespace RaftSimulationTests;
 
@@ -37,7 +38,7 @@ public class ReplciationTests
         leader.Heartbeat();
 
         // ASSERT
-        follower.Received().RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        follower.Received().RequestAppendEntries(Arg.Any<AppendEntriesDTO>());
     }
 
     [Fact]
@@ -99,7 +100,7 @@ public class ReplciationTests
 
         leader.Heartbeat();
 
-        follower.Received(1).RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        follower.Received(1).RequestAppendEntries(Arg.Any<AppendEntriesDTO>());
     }
 
     [Fact]
@@ -109,7 +110,7 @@ public class ReplciationTests
         var mockNode = Substitute.For<INode>();
         Node follower = new([mockNode]) { Id = 0 };
 
-        await follower.RequestAppendEntries(mockNode.Id, mockNode.Term, mockNode.CommittedLogIndex, 0, 0, []);
+        await follower.RequestAppendEntries(new AppendEntriesDTO(mockNode.Id, mockNode.Term, mockNode.CommittedLogIndex, 0, 0, []));
 
         Assert.Equal(mockNode.CommittedLogIndex, follower.CommittedLogIndex);
     }
@@ -162,7 +163,7 @@ public class ReplciationTests
         leader.Id.Returns(1);
         Node follower = new([leader]) { Id = 0 };
 
-        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, [e]);
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, [e]));
 
         Assert.NotEmpty(follower.Entries);
         Assert.Equal(e, follower.Entries.First());
@@ -177,7 +178,7 @@ public class ReplciationTests
         leader.Id.Returns(1);
         Node follower = new([leader]) { Id = 0 };
 
-        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []));
 
         await leader.Received(1).RespondAppendEntries(Arg.Is<RespondEntriesDTO>(dto =>
             dto.FollowerId == follower.Id &&
@@ -233,7 +234,7 @@ public class ReplciationTests
         leader.CommittedLogIndex.Returns(3);
         Node follower = new([leader]) { Id = 0 };
 
-        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []));
 
         Assert.Equal(leader.CommittedLogIndex, follower.CommittedLogIndex);
     }
@@ -252,7 +253,9 @@ public class ReplciationTests
 
         leader.Heartbeat();
 
-        follower.Received().RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        follower.Received().RequestAppendEntries(Arg.Is<AppendEntriesDTO>(dto =>
+            dto.PreviousEntryIndex == 0 && dto.PreviousEntryTerm == 0
+        ));
     }
 
     [Fact]
@@ -274,7 +277,7 @@ public class ReplciationTests
             new Entry(2, "d"),
         ];
 
-        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries);
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries));
 
         await leader.Received().RespondAppendEntries(Arg.Is<RespondEntriesDTO>(dto => dto.Response == false));
         Assert.Equal(2, follower.Entries.Count);
@@ -299,7 +302,7 @@ public class ReplciationTests
             new Entry(2, "d"),
         ];
 
-        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries);
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries));
 
         await leader.Received().RespondAppendEntries(Arg.Is<RespondEntriesDTO>(dto => dto.Response == true));
         Assert.Equal(newEntries[0].Value, follower.Entries[2].Value);
@@ -352,7 +355,7 @@ public class ReplciationTests
         int previousEntryTerm = 1; // Term is smaller than the inconsistent log
 
         // ACT
-        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, []);
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, []));
 
         // ASSERT
         await leader.Received().RespondAppendEntries(Arg.Is<RespondEntriesDTO>(dto => dto.Response == false));
@@ -410,13 +413,14 @@ public class ReplciationTests
         Node leader = new([follower])
         {
             Id = 0,
-            Entries = [new Entry(1, "command")],
+            Entries = [new Entry(1, "command"), new Entry(1, "command2")],
+            NextIndexes = new Dictionary<int, int>() { { follower.Id, 0 } }
         };
 
-        leader.BecomeLeader();
+        await leader.Heartbeat();
         await leader.Heartbeat();
 
-        await follower.Received(2).RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Do<List<Entry>>(Assert.NotEmpty));
+        await follower.Received(2).RequestAppendEntries(Arg.Is<AppendEntriesDTO>(dto => dto.Entries.Count > 0));
     }
 
     [Fact]
@@ -451,7 +455,7 @@ public class ReplciationTests
 
         Node follower = new([leader]) { Id = 0 };
 
-        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 10, 10, [new Entry(10, "a")]);
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, 10, 10, [new Entry(10, "a")]));
 
         await leader.Received().RespondAppendEntries(Arg.Is<RespondEntriesDTO>(dto => dto.Response == false));
     }
@@ -479,22 +483,44 @@ public class ReplciationTests
             new Entry(10, "c"),
         ]);
 
-        follower.RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>())
+        follower.RequestAppendEntries(Arg.Any<AppendEntriesDTO>())
             .Returns(
                 async x =>
                 {
                     await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, follower.Term, follower.Entries.Count, false));
-                    await follower.Received().RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 3, 1, []);
+                    await follower.Received().RequestAppendEntries(Arg.Is<AppendEntriesDTO>(dto =>
+                        dto.LeaderId == leader.Id &&
+                        dto.LeaderTerm == leader.Term &&
+                        dto.CommittedLogIndex == leader.CommittedLogIndex &&
+                        dto.PreviousEntryIndex == 3 &&
+                        dto.PreviousEntryTerm == 1 &&
+                        dto.Entries.Count == 0)
+                    );
                 },
                 async x =>
                 {
                     await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, follower.Term, follower.Entries.Count, false));
-                    await follower.Received().RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 2, 1, [leader.Entries[2]]);
+                    await follower.Received().RequestAppendEntries(Arg.Is<AppendEntriesDTO>(dto =>
+                        dto.LeaderId == leader.Id &&
+                        dto.LeaderTerm == leader.Term &&
+                        dto.CommittedLogIndex == leader.CommittedLogIndex &&
+                        dto.PreviousEntryIndex == 2 &&
+                        dto.PreviousEntryTerm == 1 &&
+                        dto.Entries[0] == leader.Entries[2])
+                    );
                 },
                 async x =>
                 {
                     await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, follower.Term, follower.Entries.Count, true));
-                    await follower.Received().RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 1, 1, [leader.Entries[1], leader.Entries[2]]);
+                    await follower.Received().RequestAppendEntries(Arg.Is<AppendEntriesDTO>(dto =>
+                        dto.LeaderId == leader.Id &&
+                        dto.LeaderTerm == leader.Term &&
+                        dto.CommittedLogIndex == leader.CommittedLogIndex &&
+                        dto.PreviousEntryIndex == 1 &&
+                        dto.PreviousEntryTerm == 1 &&
+                        dto.Entries[0] == leader.Entries[1] &&
+                        dto.Entries[1] == leader.Entries[2])
+                    );
                 }
             );
 
@@ -522,14 +548,13 @@ public class ReplciationTests
         Assert.Equal(4, leader.Entries.Count);
 
         await leader.Heartbeat();
-        await follower.Received().RequestAppendEntries(
-                leader.Id,
-                leader.Term,
-                leader.CommittedLogIndex,
-                2,
-                leader.Entries[2].Term,
-                Arg.Any<List<Entry>>()
-            );
+        await follower.Received().RequestAppendEntries(Arg.Is<AppendEntriesDTO>(dto =>
+                dto.LeaderId == leader.Id &&
+                dto.LeaderTerm == leader.Term &&
+                dto.CommittedLogIndex == leader.CommittedLogIndex &&
+                dto.PreviousEntryIndex == 2 &&
+                dto.PreviousEntryTerm == leader.Entries[2].Term
+            ));
     }
 
     [Fact]
@@ -539,7 +564,7 @@ public class ReplciationTests
         leader.Id.Returns(0);
         Node follower = new([leader]) { Id = 1 };
 
-        await follower.RequestAppendEntries(leader.Id, leader.Term, 0, 0, 0, [new Entry(0, "a")]);
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, 0, 0, 0, [new Entry(0, "a")]));
 
         Assert.NotEmpty(follower.Entries);
     }
@@ -562,7 +587,7 @@ public class ReplciationTests
             Entries = [entries[0], entries[1], entries[2]]
         };
 
-        await follower.RequestAppendEntries(leader.Id, leader.Term, 0, 0, 0, [entries[3]]);
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, 0, 0, 0, [entries[3]]));
 
         Assert.Equal(4, follower.Entries.Count);
     }

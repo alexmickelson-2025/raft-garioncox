@@ -1,6 +1,7 @@
 using NSubstitute;
 using raft_garioncox;
 using raft_garioncox.Records;
+using WebSimulation.Components;
 
 namespace RaftSimulationTests;
 
@@ -29,7 +30,7 @@ public class SimTests
         t.Join();
 
         // ASSERT
-        follower.Received().RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        follower.Received().RequestAppendEntries(Arg.Any<AppendEntriesDTO>());
     }
 
     [Fact]
@@ -55,7 +56,7 @@ public class SimTests
         t.Join();
 
         // ASSERT
-        await follower.Received().RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        await follower.Received().RequestAppendEntries(Arg.Any<AppendEntriesDTO>());
     }
 
     [Fact]
@@ -67,7 +68,7 @@ public class SimTests
         leader.Id.Returns(1);
         Node follower = new([leader]) { Id = 1 };
 
-        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []));
 
         Assert.Equal(leader.Id, follower.CurrentLeader);
     }
@@ -176,7 +177,7 @@ public class SimTests
         Node follower = new([leader, n2]) { Id = 0 };
 
         // ACT
-        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []));
 
         // ASSERT
         Assert.True(follower.State == NODESTATE.FOLLOWER);
@@ -305,7 +306,7 @@ public class SimTests
             State = NODESTATE.CANDIDATE,
         };
 
-        await n1.RequestAppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex, 0, 0, []);
+        await n1.RequestAppendEntries(new AppendEntriesDTO(n2.Id, n2.Term, n2.CommittedLogIndex, 0, 0, []));
 
         Assert.Equal(NODESTATE.FOLLOWER, n1.State);
     }
@@ -326,7 +327,7 @@ public class SimTests
             State = NODESTATE.CANDIDATE,
         };
 
-        await n1.RequestAppendEntries(n2.Id, n2.Term, n2.CommittedLogIndex, 0, 0, []);
+        await n1.RequestAppendEntries(new AppendEntriesDTO(n2.Id, n2.Term, n2.CommittedLogIndex, 0, 0, []));
 
         Assert.Equal(NODESTATE.FOLLOWER, n1.State);
     }
@@ -418,7 +419,7 @@ public class SimTests
         mockNode.CommittedLogIndex.Returns(0);
         Node n1 = new([mockNode]) { Id = 0 };
 
-        await n1.RequestAppendEntries(mockNode.Id, mockNode.Term, mockNode.CommittedLogIndex, 0, 0, []);
+        await n1.RequestAppendEntries(new AppendEntriesDTO(mockNode.Id, mockNode.Term, mockNode.CommittedLogIndex, 0, 0, []));
         await mockNode.Received().RespondAppendEntries(Arg.Any<RespondEntriesDTO>());
     }
 
@@ -435,7 +436,7 @@ public class SimTests
             Term = 1,
         };
 
-        await n1.RequestAppendEntries(mockLeader.Id, mockLeader.Term, mockLeader.CommittedLogIndex, 0, 0, []);
+        await n1.RequestAppendEntries(new AppendEntriesDTO(mockLeader.Id, mockLeader.Term, mockLeader.CommittedLogIndex, 0, 0, []));
 
         await mockLeader.Received().RespondAppendEntries(Arg.Is<RespondEntriesDTO>(dto => dto.Response == false));
     }
@@ -456,7 +457,7 @@ public class SimTests
 
         candidate.BecomeLeader();
 
-        n1.Received().RequestAppendEntries(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<List<Entry>>());
+        n1.Received().RequestAppendEntries(Arg.Any<AppendEntriesDTO>());
     }
 
     [Fact]
@@ -472,7 +473,7 @@ public class SimTests
             CurrentLeader = 1
         };
 
-        await follower.RequestAppendEntries(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []);
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []));
 
         Assert.Equal(leader.Term, follower.Term);
     }

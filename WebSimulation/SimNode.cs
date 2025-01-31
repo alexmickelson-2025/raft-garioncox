@@ -58,9 +58,9 @@ public class SimNode : INode
         return ((INode)node).RespondAppendEntries(dto);
     }
 
-    public Task RequestAppendEntries(int leaderId, int leaderTerm, int committedLogIndex, int previousEntryIndex, int previousEntryTerm, List<Entry> entries)
+    public Task RequestAppendEntries(AppendEntriesDTO dto)
     {
-        return ((INode)node).RequestAppendEntries(leaderId, leaderTerm, committedLogIndex, previousEntryIndex, previousEntryTerm, entries);
+        return ((INode)node).RequestAppendEntries(dto);
     }
 
     public void ReceiveCommand(IClient client, string command)
