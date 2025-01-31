@@ -111,14 +111,15 @@ public class Node : INode
         return Task.CompletedTask;
     }
 
-    public void ReceiveCommand(ClientCommandDTO dto)
+    public Task ReceiveCommand(ClientCommandDTO dto)
     {
         Entry e = new(Term, dto.Command);
         Entries.Add(e);
         ClientCommands[(Entries.Count, dto.Command)] = dto.Client;
+        return Task.CompletedTask;
     }
 
-    public void RespondVote(VoteResponseDTO dto)
+    public Task RespondVote(VoteResponseDTO dto)
     // Follower calls this on a candidate
     {
         if (dto.Vote)
@@ -130,6 +131,7 @@ public class Node : INode
         }
 
         TryBecomeLeader();
+        return Task.CompletedTask;
     }
 
     public Task RequestVoteRPC(VoteRequestDTO dto)

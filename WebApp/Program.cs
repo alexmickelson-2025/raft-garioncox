@@ -1,101 +1,100 @@
-// using System.Text.Json;
-// using OpenTelemetry.Logs;
-// using OpenTelemetry.Resources;
-// using raft_garioncox;
-// using raft_garioncox.Records;
+using System.Text.Json;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Resources;
+using raft_garioncox;
+using raft_garioncox.Records;
 
-// var builder = WebApplication.CreateBuilder(args);
-// builder.WebHost.UseUrls("http://0.0.0.0:8080");
-
-
-// var nodeId = Environment.GetEnvironmentVariable("NODE_ID") ?? throw new Exception("NODE_ID environment variable not set");
-// var otherNodesRaw = Environment.GetEnvironmentVariable("OTHER_NODES") ?? throw new Exception("OTHER_NODES environment variable not set");
-// var nodeIntervalScalarRaw = Environment.GetEnvironmentVariable("NODE_INTERVAL_SCALAR") ?? throw new Exception("NODE_INTERVAL_SCALAR environment variable not set");
-
-// builder.Services.AddLogging();
-// var serviceName = "Node" + nodeId;
-// builder.Logging.AddOpenTelemetry(options =>
-// {
-//     options
-//       .SetResourceBuilder(
-//           ResourceBuilder
-//             .CreateDefault()
-//             .AddService(serviceName)
-//       )
-//       .AddOtlpExporter(options =>
-//       {
-//           options.Endpoint = new Uri("http://dashboard:18889");
-//       });
-// });
-// var app = builder.Build();
-
-// var logger = app.Services.GetService<ILogger<Program>>();
-// logger.LogInformation("Node ID {name}", nodeId);
-// logger.LogInformation("Other nodes environment config: {}", otherNodesRaw);
+var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseUrls("http://0.0.0.0:8080");
 
 
-// INode[] otherNodes = otherNodesRaw
-//   .Split(";")
-//   .Select(s => new HttpRpcNode(int.Parse(s.Split(",")[0]), s.Split(",")[1]))
-//   .ToArray();
+var nodeId = Environment.GetEnvironmentVariable("NODE_ID") ?? throw new Exception("NODE_ID environment variable not set");
+var otherNodesRaw = Environment.GetEnvironmentVariable("OTHER_NODES") ?? throw new Exception("OTHER_NODES environment variable not set");
+var nodeIntervalScalarRaw = Environment.GetEnvironmentVariable("NODE_INTERVAL_SCALAR") ?? throw new Exception("NODE_INTERVAL_SCALAR environment variable not set");
+
+builder.Services.AddLogging();
+var serviceName = "Node" + nodeId;
+builder.Logging.AddOpenTelemetry(options =>
+{
+    options
+      .SetResourceBuilder(
+          ResourceBuilder
+            .CreateDefault()
+            .AddService(serviceName)
+      )
+      .AddOtlpExporter(options =>
+      {
+          options.Endpoint = new Uri("http://dashboard:18889");
+      });
+});
+var app = builder.Build();
+
+var logger = app.Services.GetService<ILogger<Program>>();
+logger.LogInformation("Node ID {name}", nodeId);
+logger.LogInformation("Other nodes environment config: {}", otherNodesRaw);
 
 
-// logger.LogInformation("other nodes {nodes}", JsonSerializer.Serialize(otherNodes));
+INode[] otherNodes = otherNodesRaw
+  .Split(";")
+  .Select(s => new HttpRpcNode(int.Parse(s.Split(",")[0]), s.Split(",")[1]))
+  .ToArray();
 
 
-// var node = new Node(otherNodes)
-// {
-//     Id = int.Parse(nodeId),
-//     logger = app.Services.GetService<ILogger<Node>>(),
-//     IntervalScalar = int.Parse(nodeIntervalScalarRaw)
-// };
+logger.LogInformation("other nodes {nodes}", JsonSerializer.Serialize(otherNodes));
 
-// node.Run();
 
-// app.MapGet("/health", () => "healthy");
+var node = new Node(otherNodes.ToList())
+{
+    Id = int.Parse(nodeId),
+    // logger = app.Services.GetService<ILogger<Node>>(),
+    IntervalScalar = int.Parse(nodeIntervalScalarRaw)
+};
 
-// // app.MapGet("/nodeData", () =>
-// // {
-// //     return new NodeData(
-// //       Id: node.Id,
-// //       Status: node.Status,
-// //       ElectionTimeout: node.ElectionTimeout,
-// //       Term: node.CurrentTerm,
-// //       CurrentTermLeader: node.CurrentTermLeader,
-// //       CommittedEntryIndex: node.CommittedEntryIndex,
-// //       Log: node.Log,
-// //       State: node.State,
-// //       NodeIntervalScalar: Node.NodeIntervalScalar
-// //     );
-// // });
+node.Run();
 
-// app.MapPost("/request/appendEntries", async (AppendEntriesDTO request) =>
-// {
-//     logger.LogInformation("received append entries request {request}", request);
-//     await node.RequestAppendEntries(request);
-// });
+app.MapGet("/health", () => "healthy");
 
-// app.MapPost("/request/vote", async (VoteRequestDTO request) =>
-// {
-//     logger.LogInformation("received vote request {request}", request);
-//     await node.RequestVoteRPC(request);
-// });
+app.MapGet("/nodeData", () =>
+{
+    return new NodeDataDTO(
+      Id: node.Id,
+      LogState: node.LogState,
+      ElectionTimeout: node.ElectionTimeout,
+      Term: node.Term,
+      CurrentTermLeader: node.CurrentLeader,
+      CommittedLogIndex: node.CommittedLogIndex,
+      State: node.State,
+      IntervalScalar: node.IntervalScalar
+    );
+});
 
-// app.MapPost("/response/appendEntries", async (RespondEntriesDTO response) =>
-// {
-//     logger.LogInformation("received append entries response {response}", response);
-//     await node.RespondAppendEntries(response);
-// });
+app.MapPost("/request/appendEntries", async (AppendEntriesDTO request) =>
+{
+    logger.LogInformation("received append entries request {request}", request);
+    await node.RequestAppendEntries(request);
+});
 
-// app.MapPost("/response/vote", (VoteResponseDTO response) =>
-// {
-//     logger.LogInformation("received vote response {response}", response);
-//     node.RespondVote(response);
-// });
+app.MapPost("/request/vote", async (VoteRequestDTO request) =>
+{
+    logger.LogInformation("received vote request {request}", request);
+    await node.RequestVoteRPC(request);
+});
 
-// app.MapPost("/request/command", (ClientCommandDTO data) =>
-// {
-//     node.ReceiveCommand(data);
-// });
+app.MapPost("/response/appendEntries", async (RespondEntriesDTO response) =>
+{
+    logger.LogInformation("received append entries response {response}", response);
+    await node.RespondAppendEntries(response);
+});
 
-// app.Run();
+app.MapPost("/response/vote", (VoteResponseDTO response) =>
+{
+    logger.LogInformation("received vote response {response}", response);
+    node.RespondVote(response);
+});
+
+app.MapPost("/request/command", (ClientCommandDTO data) =>
+{
+    node.ReceiveCommand(data);
+});
+
+app.Run();

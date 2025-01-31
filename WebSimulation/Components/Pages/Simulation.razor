@@ -144,7 +144,7 @@
 
     public void Start()
     {
-        foreach (INode node in nodes)
+        foreach (SimNode node in nodes)
         {
             node.Run();
         }
@@ -152,7 +152,7 @@
 
     public void Stop()
     {
-        foreach (INode node in nodes)
+        foreach (SimNode node in nodes)
         {
             node.Stop();
         }

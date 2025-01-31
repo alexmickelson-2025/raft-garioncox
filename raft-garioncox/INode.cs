@@ -11,11 +11,7 @@ public interface INode
     int Term { get; }
     public Task RequestAppendEntries(AppendEntriesDTO dto);
     public Task RespondAppendEntries(RespondEntriesDTO dto);
-    public void ReceiveCommand(ClientCommandDTO dto);
-    public void RespondVote(VoteResponseDTO dto);
+    public Task ReceiveCommand(ClientCommandDTO dto);
+    public Task RespondVote(VoteResponseDTO dto);
     public Task RequestVoteRPC(VoteRequestDTO dto);
-    public Thread Run();
-    public void Stop();
-    public void Pause();
-    public void Unpause();
 }

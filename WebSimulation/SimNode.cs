@@ -22,9 +22,10 @@ public class SimNode : INode
         node = n;
     }
 
-    public void RespondVote(VoteResponseDTO dto)
+    public Task RespondVote(VoteResponseDTO dto)
     {
         ((INode)node).RespondVote(dto);
+        return Task.CompletedTask;
     }
 
     public Task RequestVoteRPC(VoteRequestDTO dto)
@@ -35,22 +36,22 @@ public class SimNode : INode
 
     public Thread Run()
     {
-        return ((INode)node).Run();
+        return node.Run();
     }
 
     public void Stop()
     {
-        ((INode)node).Stop();
+        node.Stop();
     }
 
     public void Pause()
     {
-        ((INode)node).Pause();
+        node.Pause();
     }
 
     public void Unpause()
     {
-        ((INode)node).Unpause();
+        node.Unpause();
     }
 
     public Task RespondAppendEntries(RespondEntriesDTO dto)
@@ -63,13 +64,15 @@ public class SimNode : INode
         return ((INode)node).RequestAppendEntries(dto);
     }
 
-    public void ReceiveCommand(ClientCommandDTO dto)
+    public Task ReceiveCommand(ClientCommandDTO dto)
     {
         ((INode)node).ReceiveCommand(dto);
+        return Task.CompletedTask;
     }
 
-    public void ResetElectionTimeout(bool isLeader = false)
+    public Task ResetElectionTimeout(bool isLeader = false)
     {
         node.ResetElectionTimeout(isLeader);
+        return Task.CompletedTask;
     }
 }
