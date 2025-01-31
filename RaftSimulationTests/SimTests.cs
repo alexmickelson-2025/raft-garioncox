@@ -260,8 +260,8 @@ public class SimTests
     public void GivenAFollowerHasNotVoted_WhenARequestRPCIsSentWithALaterTerm_ThenItRespondsYes()
     {
         var candidate = Substitute.For<INode>();
-        candidate.Id = 1;
-        candidate.Term = 1;
+        candidate.Id.Returns(1);
+        candidate.Term.Returns(1);
 
         Node follower = new([candidate])
         {
@@ -428,8 +428,8 @@ public class SimTests
     public async Task WhenFollowerReceivesAppendEntriesRequest_WithPreviousTerm_ItRejects()
     {
         INode mockLeader = Substitute.For<INode>();
-        mockLeader.Term = 0;
-        mockLeader.CommittedLogIndex = 0;
+        mockLeader.Term.Returns(0);
+        mockLeader.CommittedLogIndex.Returns(0);
         Node n1 = new([mockLeader])
         {
             Id = 0,

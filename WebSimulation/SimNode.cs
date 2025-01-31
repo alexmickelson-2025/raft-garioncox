@@ -4,7 +4,7 @@ using raft_garioncox.Records;
 public class SimNode : INode
 {
     Node node;
-    public int Id { get => ((INode)node).Id; set => ((INode)node).Id = value; }
+    public int Id { get => ((INode)node).Id; }
     public NODESTATE State { get => node.State; set => node.State = value; }
     public int Term { get => node.Term; set => node.Term = value; }
     public int NetworkDelay { get; set; } = 0;
@@ -14,7 +14,7 @@ public class SimNode : INode
     public int ElectionTimeout { get => node.ElectionTimeout; set => node.ElectionTimeout = value; }
     public bool IsPaused { get => node.IsPaused; set => node.IsPaused = value; }
     public Dictionary<int, INode> Neighbors { get => node.Neighbors; set => node.Neighbors = value; }
-    public int IntervalScalar { get => ((INode)node).IntervalScalar; set => ((INode)node).IntervalScalar = value; }
+    public int IntervalScalar { get => node.IntervalScalar; set => node.IntervalScalar = value; }
     public string LogState { get => node.LogState; }
 
     public SimNode(Node n)

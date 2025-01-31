@@ -2,6 +2,7 @@
 // using OpenTelemetry.Logs;
 // using OpenTelemetry.Resources;
 // using raft_garioncox;
+// using raft_garioncox.Records;
 
 // var builder = WebApplication.CreateBuilder(args);
 // builder.WebHost.UseUrls("http://0.0.0.0:8080");
@@ -45,31 +46,30 @@
 // var node = new Node(otherNodes)
 // {
 //     Id = int.Parse(nodeId),
-//     logger = app.Services.GetService<ILogger<Node>>()
+//     logger = app.Services.GetService<ILogger<Node>>(),
+//     IntervalScalar = int.Parse(nodeIntervalScalarRaw)
 // };
-
-// Node.IntervalScalar = int.Parse(nodeIntervalScalarRaw);
 
 // node.Run();
 
 // app.MapGet("/health", () => "healthy");
 
-// app.MapGet("/nodeData", () =>
-// {
-//     return new NodeData(
-//       Id: node.Id,
-//       Status: node.Status,
-//       ElectionTimeout: node.ElectionTimeout,
-//       Term: node.CurrentTerm,
-//       CurrentTermLeader: node.CurrentTermLeader,
-//       CommittedEntryIndex: node.CommittedEntryIndex,
-//       Log: node.Log,
-//       State: node.State,
-//       NodeIntervalScalar: Node.NodeIntervalScalar
-//     );
-// });
+// // app.MapGet("/nodeData", () =>
+// // {
+// //     return new NodeData(
+// //       Id: node.Id,
+// //       Status: node.Status,
+// //       ElectionTimeout: node.ElectionTimeout,
+// //       Term: node.CurrentTerm,
+// //       CurrentTermLeader: node.CurrentTermLeader,
+// //       CommittedEntryIndex: node.CommittedEntryIndex,
+// //       Log: node.Log,
+// //       State: node.State,
+// //       NodeIntervalScalar: Node.NodeIntervalScalar
+// //     );
+// // });
 
-// app.MapPost("/request/appendEntries", async (AppendEntriesData request) =>
+// app.MapPost("/request/appendEntries", async (AppendEntriesDTO request) =>
 // {
 //     logger.LogInformation("received append entries request {request}", request);
 //     await node.RequestAppendEntries(request);
@@ -78,24 +78,24 @@
 // app.MapPost("/request/vote", async (VoteRequestDTO request) =>
 // {
 //     logger.LogInformation("received vote request {request}", request);
-//     await node.RequestVote(request);
+//     await node.RequestVoteRPC(request);
 // });
 
-// app.MapPost("/response/appendEntries", async (RespondEntriesData response) =>
+// app.MapPost("/response/appendEntries", async (RespondEntriesDTO response) =>
 // {
 //     logger.LogInformation("received append entries response {response}", response);
 //     await node.RespondAppendEntries(response);
 // });
 
-// app.MapPost("/response/vote", async (VoteResponseData response) =>
+// app.MapPost("/response/vote", (VoteResponseDTO response) =>
 // {
 //     logger.LogInformation("received vote response {response}", response);
-//     await node.ResponseVote(response);
+//     node.RespondVote(response);
 // });
 
-// app.MapPost("/request/command", async (ClientCommandData data) =>
+// app.MapPost("/request/command", (ClientCommandDTO data) =>
 // {
-//     await node.SendCommand(data);
+//     node.ReceiveCommand(data);
 // });
 
 // app.Run();
