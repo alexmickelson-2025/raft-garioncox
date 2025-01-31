@@ -23,6 +23,12 @@
         <input id="commandInput" class="form-control" maxlength="10" @bind=Command>
     </div>
     <button type="submit" class="btn btn-primary mt-3">Send</button>
+
+    <p class="mt-3 text-decoration-underline">CommandList</p>
+    @foreach (string command in simClient.CommittedRequests.Keys)
+    {
+        <p>@command : @simClient.CommittedRequests[command]</p>
+    }
 </form>
 
 <hr>
@@ -101,7 +107,7 @@
     int NetworkDelay = 0;
     public required Timer timer;
     public string Command = "";
-    public string SelectedNode { get; set; } = "1";
+    public string SelectedNode { get; set; } = "0";
     public SimClient simClient = new(0);
 
     protected override void OnInitialized()
@@ -177,6 +183,7 @@
     public void HandleSendCommand()
     {
         int nodeId = int.Parse(SelectedNode);
+        simClient.AddCommand(Command);
         nodes[nodeId].ReceiveCommand(simClient, Command);
     }
 }

@@ -1,4 +1,5 @@
 using raft_garioncox;
+using raft_garioncox.Records;
 
 public class SimNode : INode
 {
@@ -26,15 +27,10 @@ public class SimNode : INode
         ((INode)node).RespondVote(vote);
     }
 
-    // public bool RequestVote(int id, int term)
-    // {
-    //     return ((INode)node).RequestVote(id, term);
-    // }
-
-    public Task RequestVoteRPC(int cId, int cTerm)
+    public Task RequestVoteRPC(VoteRequestDTO dto)
     {
         Thread.Sleep(NetworkDelay);
-        return ((INode)node).RequestVoteRPC(cId, cTerm);
+        return ((INode)node).RequestVoteRPC(dto);
     }
 
     public Thread Run()

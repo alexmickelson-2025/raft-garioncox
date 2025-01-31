@@ -1,4 +1,5 @@
 using raft_garioncox;
+using raft_garioncox.Records;
 
 public interface INode
 {
@@ -16,7 +17,7 @@ public interface INode
     public Task RespondAppendEntries(int followerId, int followerTerm, int followerEntryIndex, bool response);
     public void ReceiveCommand(IClient client, string command);
     public void RespondVote(bool vote);
-    public Task RequestVoteRPC(int cId, int cTerm);
+    public Task RequestVoteRPC(VoteRequestDTO dto);
     public Thread Run();
     public void Stop();
     public void Pause();

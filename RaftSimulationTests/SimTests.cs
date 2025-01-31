@@ -1,5 +1,6 @@
 using NSubstitute;
 using raft_garioncox;
+using raft_garioncox.Records;
 
 namespace RaftSimulationTests;
 
@@ -201,15 +202,15 @@ public class SimTests
         n2.Id.Returns(2);
         Node candidate = new([n2, n3]) { Id = 0 };
 
-        n2.When(n => n.RequestVoteRPC(Arg.Any<int>(), Arg.Any<int>()))
+        n2.When(n => n.RequestVoteRPC(Arg.Any<VoteRequestDTO>()))
             .Do(x => candidate.RespondVote(true));
-        n3.When(n => n.RequestVoteRPC(Arg.Any<int>(), Arg.Any<int>()))
+        n3.When(n => n.RequestVoteRPC(Arg.Any<VoteRequestDTO>()))
             .Do(x => candidate.RespondVote(true));
 
         candidate.BecomeCandidate();
 
-        n2.Received().RequestVoteRPC(Arg.Any<int>(), Arg.Any<int>());
-        n3.Received().RequestVoteRPC(Arg.Any<int>(), Arg.Any<int>());
+        n2.Received().RequestVoteRPC(Arg.Any<VoteRequestDTO>());
+        n3.Received().RequestVoteRPC(Arg.Any<VoteRequestDTO>());
         Assert.Equal(NODESTATE.LEADER, candidate.State);
     }
 
@@ -221,7 +222,7 @@ public class SimTests
         candidate.Term.Returns(0);
         Node follower = new([candidate]) { Id = 0 };
 
-        await follower.RequestVoteRPC(candidate.Id, candidate.Term);
+        await follower.RequestVoteRPC(new VoteRequestDTO(candidate.Id, candidate.Term));
 
         Assert.Equal(candidate.Id, follower.Vote);
         Assert.True(follower.HasVoted);
@@ -239,7 +240,7 @@ public class SimTests
         var n1 = Substitute.For<INode>();
         var n2 = Substitute.For<INode>();
 
-        n2.When(n => n.RequestVoteRPC(Arg.Any<int>(), Arg.Any<int>()))
+        n2.When(n => n.RequestVoteRPC(Arg.Any<VoteRequestDTO>()))
             .Do(x => candidate.RespondVote(true));
 
 
@@ -268,7 +269,7 @@ public class SimTests
             HasVoted = false,
         };
 
-        follower.RequestVoteRPC(candidate.Id, candidate.Term);
+        follower.RequestVoteRPC(new VoteRequestDTO(candidate.Id, candidate.Term));
 
         candidate.Received().RespondVote(true);
     }
@@ -348,8 +349,8 @@ public class SimTests
             Term = 0
         };
 
-        await n1.RequestVoteRPC(n2.Id, n2.Term);
-        await n1.RequestVoteRPC(n3.Id, n3.Term);
+        await n1.RequestVoteRPC(new VoteRequestDTO(n2.Id, n2.Term));
+        await n1.RequestVoteRPC(new VoteRequestDTO(n3.Id, n3.Term));
 
         n2.Received().RespondVote(true);
         n3.Received().RespondVote(false);
@@ -373,8 +374,8 @@ public class SimTests
             Term = 0
         };
 
-        await n1.RequestVoteRPC(n2.Id, n2.Term);
-        await n1.RequestVoteRPC(n3.Id, n3.Term);
+        await n1.RequestVoteRPC(new VoteRequestDTO(n2.Id, n2.Term));
+        await n1.RequestVoteRPC(new VoteRequestDTO(n3.Id, n3.Term));
 
         n2.Received().RespondVote(true);
         n3.Received().RespondVote(true);
@@ -450,7 +451,7 @@ public class SimTests
             ElectionTimeout = 10,
         };
 
-        n1.When(n => n.RequestVoteRPC(Arg.Any<int>(), Arg.Any<int>()))
+        n1.When(n => n.RequestVoteRPC(Arg.Any<VoteRequestDTO>()))
             .Do(n => candidate.RespondVote(true));
 
         candidate.BecomeLeader();

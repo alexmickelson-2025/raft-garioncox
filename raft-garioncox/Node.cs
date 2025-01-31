@@ -1,4 +1,6 @@
-﻿namespace raft_garioncox;
+﻿using raft_garioncox.Records;
+
+namespace raft_garioncox;
 
 public class Node : INode
 {
@@ -127,21 +129,21 @@ public class Node : INode
         TryBecomeLeader();
     }
 
-    public Task RequestVoteRPC(int cId, int cTerm)
+    public Task RequestVoteRPC(VoteRequestDTO dto)
     // Candidate calls this function on a follower
     {
         if (IsPaused) { return Task.CompletedTask; }
 
-        INode candidate = Neighbors[cId];
+        INode candidate = Neighbors[dto.Id];
 
-        if (HasVoted && cTerm <= Term)
+        if (HasVoted && dto.Term <= Term)
         {
             candidate.RespondVote(false);
         }
         else
         {
             HasVoted = true;
-            Vote = cId;
+            Vote = dto.Id;
             candidate.RespondVote(true);
         }
 
@@ -163,9 +165,11 @@ public class Node : INode
 
     public void RequestVotesRPC()
     {
+        VoteRequestDTO dto = new(Id, Term);
+
         foreach (INode node in Neighbors.Values)
         {
-            node.RequestVoteRPC(Id, Term);
+            node.RequestVoteRPC(dto);
         }
 
         TryBecomeLeader();
