@@ -22,7 +22,7 @@
 //         }
 //     }
 
-//     public async Task RequestVote(VoteRequestData request)
+//     public async Task RequestVoteRPC(VoteRequestDTO request)
 //     {
 //         try
 //         {

@@ -75,7 +75,7 @@
 //     await node.RequestAppendEntries(request);
 // });
 
-// app.MapPost("/request/vote", async (VoteRequestData request) =>
+// app.MapPost("/request/vote", async (VoteRequestDTO request) =>
 // {
 //     logger.LogInformation("received vote request {request}", request);
 //     await node.RequestVote(request);

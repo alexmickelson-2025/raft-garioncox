@@ -1,5 +1,3 @@
-
-
 public class SimClient(int id) : IClient
 {
     public int Id { get; private set; } = id;
