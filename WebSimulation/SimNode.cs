@@ -63,9 +63,9 @@ public class SimNode : INode
         return ((INode)node).RequestAppendEntries(dto);
     }
 
-    public void ReceiveCommand(IClient client, string command)
+    public void ReceiveCommand(ClientCommandDTO dto)
     {
-        ((INode)node).ReceiveCommand(client, command);
+        ((INode)node).ReceiveCommand(dto);
     }
 
     public void ResetElectionTimeout(bool isLeader = false)

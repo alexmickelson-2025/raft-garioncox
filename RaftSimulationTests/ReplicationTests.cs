@@ -34,7 +34,7 @@ public class ReplciationTests
         string command = DateTime.MaxValue.ToString();
 
         // ACT
-        leader.ReceiveCommand(client, command);
+        leader.ReceiveCommand(new ClientCommandDTO(client, command));
         leader.Heartbeat();
 
         // ASSERT
@@ -51,7 +51,7 @@ public class ReplciationTests
         string command = DateTime.MaxValue.ToString();
         Node leader = new();
 
-        leader.ReceiveCommand(client, command);
+        leader.ReceiveCommand(new ClientCommandDTO(client, command));
 
         Assert.NotEmpty(leader.Entries);
         Entry e = leader.Entries.First();
@@ -132,7 +132,7 @@ public class ReplciationTests
 
         Node leader = new([mockfollower, mockNode2]) { Id = 0 };
 
-        leader.ReceiveCommand(mockClient, "a");
+        leader.ReceiveCommand(new ClientCommandDTO(mockClient, "a"));
 
         await leader.RespondAppendEntries(new RespondEntriesDTO(mockfollower.Id, mockfollower.Term, mockfollower.CommittedLogIndex, true));
 
@@ -148,7 +148,7 @@ public class ReplciationTests
 
         Node leader = new() { Id = 0 };
 
-        leader.ReceiveCommand(mockClient, "a");
+        leader.ReceiveCommand(new ClientCommandDTO(mockClient, "a"));
         leader.CommitEntry();
 
         Assert.Equal(1, leader.CommittedLogIndex);
@@ -203,7 +203,7 @@ public class ReplciationTests
 
         Node leader = new([follower, follower2]) { Id = 0 };
 
-        leader.ReceiveCommand(client, "a");
+        leader.ReceiveCommand(new ClientCommandDTO(client, "a"));
         await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, follower.Term, follower.Entries.Count, true));
 
         await client.Received().ReceiveLeaderCommitResponse("a", true);
@@ -219,7 +219,7 @@ public class ReplciationTests
         string entry = "a";
         Node leader = new();
 
-        leader.ReceiveCommand(mockClient, entry);
+        leader.ReceiveCommand(new ClientCommandDTO(mockClient, entry));
         leader.CommitEntry();
 
         Assert.Equal(entry, leader.LogState);
@@ -440,7 +440,7 @@ public class ReplciationTests
         Node leader = new([follower, follower2]) { Id = 0 };
 
         leader.BecomeLeader();
-        leader.ReceiveCommand(client, "a");
+        leader.ReceiveCommand(new ClientCommandDTO(client, "a"));
         await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, follower.Term, follower.Entries.Count, false));
 
         await client.Received(0).ReceiveLeaderCommitResponse(Arg.Any<string>(), Arg.Any<bool>());
@@ -544,7 +544,7 @@ public class ReplciationTests
             NextIndexes = new Dictionary<int, int>() { { follower.Id, 3 } }
         };
 
-        leader.ReceiveCommand(client, "d");
+        leader.ReceiveCommand(new ClientCommandDTO(client, "d"));
         Assert.Equal(4, leader.Entries.Count);
 
         await leader.Heartbeat();

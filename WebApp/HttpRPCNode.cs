@@ -60,7 +60,7 @@
 //         }
 //     }
 
-//     public async Task SendCommand(ClientCommandData data)
+//     public async Task SendCommand(ClientCommandDTO data)
 //     {
 //         await client.PostAsJsonAsync(Url + "/request/command", data);
 //     }

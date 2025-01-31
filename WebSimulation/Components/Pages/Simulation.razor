@@ -1,6 +1,7 @@
 ﻿@page "/"
 @rendermode InteractiveServer
 @using raft_garioncox
+@using raft_garioncox.Records
 
 <PageTitle>Home</PageTitle>
 
@@ -184,6 +185,6 @@
     {
         int nodeId = int.Parse(SelectedNode);
         simClient.AddCommand(Command);
-        nodes[nodeId].ReceiveCommand(simClient, Command);
+        nodes[nodeId].ReceiveCommand(new ClientCommandDTO(simClient, Command));
     }
 }

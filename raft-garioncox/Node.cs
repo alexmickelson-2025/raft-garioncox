@@ -111,11 +111,11 @@ public class Node : INode
         return Task.CompletedTask;
     }
 
-    public void ReceiveCommand(IClient client, string command)
+    public void ReceiveCommand(ClientCommandDTO dto)
     {
-        Entry e = new(Term, command);
+        Entry e = new(Term, dto.Command);
         Entries.Add(e);
-        ClientCommands[(Entries.Count, command)] = client;
+        ClientCommands[(Entries.Count, dto.Command)] = dto.Client;
     }
 
     public void RespondVote(VoteResponseDTO dto)
