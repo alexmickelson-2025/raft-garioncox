@@ -1,3 +1,5 @@
+// using raft_garioncox.Records;
+
 // public class HttpRpcNode : INode
 // {
 //     public int Id { get; }
@@ -46,7 +48,7 @@
 //         }
 //     }
 
-//     public async Task RespondVote(VoteResponseData response)
+//     public async Task RespondVote(VoteResponseDTO response)
 //     {
 //         try
 //         {

@@ -118,12 +118,15 @@ public class Node : INode
         ClientCommands[(Entries.Count, command)] = client;
     }
 
-    public void RespondVote(bool vote)
+    public void RespondVote(VoteResponseDTO dto)
     // Follower calls this on a candidate
     {
-        lock (VoteCountLock)
+        if (dto.Vote)
         {
-            VoteCount++;
+            lock (VoteCountLock)
+            {
+                VoteCount++;
+            }
         }
 
         TryBecomeLeader();
@@ -138,13 +141,13 @@ public class Node : INode
 
         if (HasVoted && dto.Term <= Term)
         {
-            candidate.RespondVote(false);
+            candidate.RespondVote(new VoteResponseDTO(false));
         }
         else
         {
             HasVoted = true;
             Vote = dto.Id;
-            candidate.RespondVote(true);
+            candidate.RespondVote(new VoteResponseDTO(true));
         }
 
         return Task.CompletedTask;

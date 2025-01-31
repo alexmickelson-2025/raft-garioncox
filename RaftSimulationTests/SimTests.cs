@@ -203,9 +203,9 @@ public class SimTests
         Node candidate = new([n2, n3]) { Id = 0 };
 
         n2.When(n => n.RequestVoteRPC(Arg.Any<VoteRequestDTO>()))
-            .Do(x => candidate.RespondVote(true));
+            .Do(x => candidate.RespondVote(new VoteResponseDTO(true)));
         n3.When(n => n.RequestVoteRPC(Arg.Any<VoteRequestDTO>()))
-            .Do(x => candidate.RespondVote(true));
+            .Do(x => candidate.RespondVote(new VoteResponseDTO(true)));
 
         candidate.BecomeCandidate();
 
@@ -241,7 +241,7 @@ public class SimTests
         var n2 = Substitute.For<INode>();
 
         n2.When(n => n.RequestVoteRPC(Arg.Any<VoteRequestDTO>()))
-            .Do(x => candidate.RespondVote(true));
+            .Do(x => candidate.RespondVote(new VoteResponseDTO(true)));
 
 
         Thread t = candidate.Run();
@@ -271,7 +271,7 @@ public class SimTests
 
         follower.RequestVoteRPC(new VoteRequestDTO(candidate.Id, candidate.Term));
 
-        candidate.Received().RespondVote(true);
+        candidate.Received().RespondVote(new VoteResponseDTO(true));
     }
 
     [Fact]
@@ -352,8 +352,8 @@ public class SimTests
         await n1.RequestVoteRPC(new VoteRequestDTO(n2.Id, n2.Term));
         await n1.RequestVoteRPC(new VoteRequestDTO(n3.Id, n3.Term));
 
-        n2.Received().RespondVote(true);
-        n3.Received().RespondVote(false);
+        n2.Received().RespondVote(new VoteResponseDTO(true));
+        n3.Received().RespondVote(new VoteResponseDTO(false));
     }
 
     [Fact]
@@ -377,8 +377,8 @@ public class SimTests
         await n1.RequestVoteRPC(new VoteRequestDTO(n2.Id, n2.Term));
         await n1.RequestVoteRPC(new VoteRequestDTO(n3.Id, n3.Term));
 
-        n2.Received().RespondVote(true);
-        n3.Received().RespondVote(true);
+        n2.Received().RespondVote(new VoteResponseDTO(true));
+        n3.Received().RespondVote(new VoteResponseDTO(true));
     }
 
     [Fact]
@@ -452,7 +452,7 @@ public class SimTests
         };
 
         n1.When(n => n.RequestVoteRPC(Arg.Any<VoteRequestDTO>()))
-            .Do(n => candidate.RespondVote(true));
+            .Do(n => candidate.RespondVote(new VoteResponseDTO(true)));
 
         candidate.BecomeLeader();
 

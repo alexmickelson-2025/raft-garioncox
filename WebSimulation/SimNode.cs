@@ -22,9 +22,9 @@ public class SimNode : INode
         node = n;
     }
 
-    public void RespondVote(bool vote)
+    public void RespondVote(VoteResponseDTO dto)
     {
-        ((INode)node).RespondVote(vote);
+        ((INode)node).RespondVote(dto);
     }
 
     public Task RequestVoteRPC(VoteRequestDTO dto)
