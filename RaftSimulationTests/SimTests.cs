@@ -64,11 +64,12 @@ public class SimTests
     public async Task Cluster_WhenNodeReceivesAppendEntries_ThenRemembersOtherNodeIsCurrentLeader()
     {
         var leader = Substitute.For<INode>();
-        leader.State.Returns(NODESTATE.LEADER);
+        int mockTerm = 0;
+        int mockCommittedLogIndex = 0;
         leader.Id.Returns(1);
         Node follower = new([leader]) { Id = 1 };
 
-        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []));
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, mockTerm, mockCommittedLogIndex, 0, 0, []));
 
         Assert.Equal(leader.Id, follower.CurrentLeader);
     }
@@ -172,12 +173,14 @@ public class SimTests
         // ARRANGE
         var leader = Substitute.For<INode>();
         leader.Id.Returns(0);
+        int mockTerm = 0;
+        int mockCommittedLogIndex = 0;
         var n2 = Substitute.For<INode>();
         n2.Id.Returns(1);
         Node follower = new([leader, n2]) { Id = 0 };
 
         // ACT
-        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []));
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, mockTerm, mockCommittedLogIndex, 0, 0, []));
 
         // ASSERT
         Assert.True(follower.State == NODESTATE.FOLLOWER);
@@ -220,10 +223,10 @@ public class SimTests
     {
         var candidate = Substitute.For<INode>();
         candidate.Id.Returns(1);
-        candidate.Term.Returns(0);
+        int mockTerm = 0;
         Node follower = new([candidate]) { Id = 0 };
 
-        await follower.RequestVoteRPC(new VoteRequestDTO(candidate.Id, candidate.Term));
+        await follower.RequestVoteRPC(new VoteRequestDTO(candidate.Id, mockTerm));
 
         Assert.Equal(candidate.Id, follower.Vote);
         Assert.True(follower.HasVoted);
@@ -261,7 +264,7 @@ public class SimTests
     {
         var candidate = Substitute.For<INode>();
         candidate.Id.Returns(1);
-        candidate.Term.Returns(1);
+        int mockTerm = 1;
 
         Node follower = new([candidate])
         {
@@ -270,7 +273,7 @@ public class SimTests
             HasVoted = false,
         };
 
-        follower.RequestVoteRPC(new VoteRequestDTO(candidate.Id, candidate.Term));
+        follower.RequestVoteRPC(new VoteRequestDTO(candidate.Id, mockTerm));
 
         candidate.Received().RespondVote(new VoteResponseDTO(true));
     }
@@ -296,9 +299,9 @@ public class SimTests
     public async Task WhenCandidateReceivesMessageFromLaterTerm_BecomesFollower()
     {
         var n2 = Substitute.For<INode>();
-        n2.Term.Returns(1);
         n2.Id.Returns(1);
-        n2.CommittedLogIndex.Returns(0);
+        int mockTerm = 1;
+        int mockCommittedLogIndex = 0;
         Node n1 = new([n2])
         {
             Id = 0,
@@ -306,7 +309,7 @@ public class SimTests
             State = NODESTATE.CANDIDATE,
         };
 
-        await n1.RequestAppendEntries(new AppendEntriesDTO(n2.Id, n2.Term, n2.CommittedLogIndex, 0, 0, []));
+        await n1.RequestAppendEntries(new AppendEntriesDTO(n2.Id, mockTerm, mockCommittedLogIndex, 0, 0, []));
 
         Assert.Equal(NODESTATE.FOLLOWER, n1.State);
     }
@@ -316,9 +319,9 @@ public class SimTests
     public async Task WhenCandidateReceivesMessageFromEqualTerm_BecomesFollower()
     {
         var n2 = Substitute.For<INode>();
-        n2.Term.Returns(1);
         n2.Id.Returns(1);
-        n2.CommittedLogIndex.Returns(0);
+        int mockTerm = 1;
+        int mockCommittedLogIndex = 0;
 
         Node n1 = new([n2])
         {
@@ -327,7 +330,7 @@ public class SimTests
             State = NODESTATE.CANDIDATE,
         };
 
-        await n1.RequestAppendEntries(new AppendEntriesDTO(n2.Id, n2.Term, n2.CommittedLogIndex, 0, 0, []));
+        await n1.RequestAppendEntries(new AppendEntriesDTO(n2.Id, mockTerm, mockCommittedLogIndex, 0, 0, []));
 
         Assert.Equal(NODESTATE.FOLLOWER, n1.State);
     }
@@ -337,21 +340,20 @@ public class SimTests
     public async Task IfNodeReceivesSecondVoteRequest_ShouldRespondNo()
     {
         var n2 = Substitute.For<INode>();
-        n2.Term.Returns(0);
         n2.Id.Returns(1);
 
         var n3 = Substitute.For<INode>();
-        n3.Term.Returns(0);
         n3.Id.Returns(2);
 
+        int mockTerm = 0;
         Node n1 = new([n2, n3])
         {
             Id = 0,
             Term = 0
         };
 
-        await n1.RequestVoteRPC(new VoteRequestDTO(n2.Id, n2.Term));
-        await n1.RequestVoteRPC(new VoteRequestDTO(n3.Id, n3.Term));
+        await n1.RequestVoteRPC(new VoteRequestDTO(n2.Id, mockTerm));
+        await n1.RequestVoteRPC(new VoteRequestDTO(n3.Id, mockTerm));
 
         await n2.Received().RespondVote(new VoteResponseDTO(true));
         await n3.Received().RespondVote(new VoteResponseDTO(false));
@@ -362,11 +364,9 @@ public class SimTests
     public async Task IfNodeReceivesSecondVoteRequestForFutureTurm_ShouldRespondYes()
     {
         var n2 = Substitute.For<INode>();
-        n2.Term.Returns(0);
         n2.Id.Returns(1);
 
         var n3 = Substitute.For<INode>();
-        n3.Term.Returns(1);
         n3.Id.Returns(2);
 
         Node n1 = new([n2, n3])
@@ -375,8 +375,11 @@ public class SimTests
             Term = 0
         };
 
-        await n1.RequestVoteRPC(new VoteRequestDTO(n2.Id, n2.Term));
-        await n1.RequestVoteRPC(new VoteRequestDTO(n3.Id, n3.Term));
+        int mockTerm_n2 = 0;
+        int mockTerm_n3 = 1;
+
+        await n1.RequestVoteRPC(new VoteRequestDTO(n2.Id, mockTerm_n2));
+        await n1.RequestVoteRPC(new VoteRequestDTO(n3.Id, mockTerm_n3));
 
         await n2.Received().RespondVote(new VoteResponseDTO(true));
         await n3.Received().RespondVote(new VoteResponseDTO(true));
@@ -415,11 +418,11 @@ public class SimTests
     {
         INode mockNode = Substitute.For<INode>();
         mockNode.Id.Returns(1);
-        mockNode.Term.Returns(0);
-        mockNode.CommittedLogIndex.Returns(0);
+        int mockTerm = 0;
+        int mockCommittedLogIndex = 0;
         Node n1 = new([mockNode]) { Id = 0 };
 
-        await n1.RequestAppendEntries(new AppendEntriesDTO(mockNode.Id, mockNode.Term, mockNode.CommittedLogIndex, 0, 0, []));
+        await n1.RequestAppendEntries(new AppendEntriesDTO(mockNode.Id, mockTerm, mockCommittedLogIndex, 0, 0, []));
         await mockNode.Received().RespondAppendEntries(Arg.Any<RespondEntriesDTO>());
     }
 
@@ -428,15 +431,15 @@ public class SimTests
     public async Task WhenFollowerReceivesAppendEntriesRequest_WithPreviousTerm_ItRejects()
     {
         INode mockLeader = Substitute.For<INode>();
-        mockLeader.Term.Returns(0);
-        mockLeader.CommittedLogIndex.Returns(0);
+        int mockTerm = 0;
+        int mockCommittedLogIndex = 0;
         Node n1 = new([mockLeader])
         {
             Id = 0,
             Term = 1,
         };
 
-        await n1.RequestAppendEntries(new AppendEntriesDTO(mockLeader.Id, mockLeader.Term, mockLeader.CommittedLogIndex, 0, 0, []));
+        await n1.RequestAppendEntries(new AppendEntriesDTO(mockLeader.Id, mockTerm, mockCommittedLogIndex, 0, 0, []));
 
         await mockLeader.Received().RespondAppendEntries(Arg.Is<RespondEntriesDTO>(dto => dto.Response == false));
     }
@@ -464,17 +467,17 @@ public class SimTests
     public async Task WhenFollowerReceivesHeartbeatFromLeader_ItUpdatesItsTermToMatchLeader()
     {
         var leader = Substitute.For<INode>();
-        leader.Term.Returns(2);
         leader.Id.Returns(1);
-        leader.CommittedLogIndex.Returns(0);
+        int mockTerm = 2;
+        int mockCommittedLogIndex = 0;
         Node follower = new([leader])
         {
             Id = 0,
             CurrentLeader = 1
         };
 
-        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []));
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, mockTerm, mockCommittedLogIndex, 0, 0, []));
 
-        Assert.Equal(leader.Term, follower.Term);
+        Assert.Equal(mockTerm, follower.Term);
     }
 }

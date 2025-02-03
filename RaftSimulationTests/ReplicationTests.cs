@@ -108,11 +108,13 @@ public class ReplciationTests
     public async Task WhenFollowerLearnsLogIsCommitted_ItCommitsThatLog()
     {
         var mockNode = Substitute.For<INode>();
+        int mockTerm = 0;
+        int mockLogIndex = 0;
         Node follower = new([mockNode]) { Id = 0 };
 
-        await follower.RequestAppendEntries(new AppendEntriesDTO(mockNode.Id, mockNode.Term, mockNode.CommittedLogIndex, 0, 0, []));
+        await follower.RequestAppendEntries(new AppendEntriesDTO(mockNode.Id, mockTerm, mockLogIndex, 0, 0, []));
 
-        Assert.Equal(mockNode.CommittedLogIndex, follower.CommittedLogIndex);
+        Assert.Equal(mockLogIndex, follower.CommittedLogIndex);
     }
 
     [Fact]
@@ -124,8 +126,8 @@ public class ReplciationTests
 
         var mockfollower = Substitute.For<INode>();
         mockfollower.Id.Returns(1);
-        mockfollower.CommittedLogIndex.Returns(1);
-        mockfollower.Term.Returns(0);
+        int mockTerm = 0;
+        int mockLogIndex = 1;
 
         var mockNode2 = Substitute.For<INode>();
         mockNode2.Id.Returns(2);
@@ -134,7 +136,7 @@ public class ReplciationTests
 
         await leader.ReceiveCommand(new ClientCommandDTO(mockClient, "a"));
 
-        await leader.RespondAppendEntries(new RespondEntriesDTO(mockfollower.Id, mockfollower.Term, mockfollower.CommittedLogIndex, true));
+        await leader.RespondAppendEntries(new RespondEntriesDTO(mockfollower.Id, mockTerm, mockLogIndex, true));
 
         Assert.Equal(1, leader.CommittedLogIndex);
     }
@@ -161,9 +163,11 @@ public class ReplciationTests
         Entry e = new(1, "commandstring");
         var leader = Substitute.For<INode>();
         leader.Id.Returns(1);
+        int mockTerm = 0;
+        int mockLogIndex = 0;
         Node follower = new([leader]) { Id = 0 };
 
-        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, [e]));
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, mockTerm, mockLogIndex, 0, 0, [e]));
 
         Assert.NotEmpty(follower.Entries);
         Assert.Equal(e, follower.Entries.First());
@@ -176,9 +180,11 @@ public class ReplciationTests
         Entry e = new(1, "commandstring");
         var leader = Substitute.For<INode>();
         leader.Id.Returns(1);
+        int mockTerm = 0;
+        int mockLogIndex = 0;
         Node follower = new([leader]) { Id = 0 };
 
-        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []));
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, mockTerm, mockLogIndex, 0, 0, []));
 
         await leader.Received(1).RespondAppendEntries(Arg.Is<RespondEntriesDTO>(dto =>
             dto.FollowerId == follower.Id &&
@@ -196,7 +202,8 @@ public class ReplciationTests
 
         var follower = Substitute.For<INode>();
         follower.Id.Returns(1);
-        follower.Entries.Returns([new Entry(0, "a")]);
+        Entry[] mockEntries = new Entry[1];
+        int mockTerm = 0;
 
         var follower2 = Substitute.For<INode>();
         follower2.Id.Returns(2);
@@ -204,7 +211,7 @@ public class ReplciationTests
         Node leader = new([follower, follower2]) { Id = 0 };
 
         await leader.ReceiveCommand(new ClientCommandDTO(client, "a"));
-        await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, follower.Term, follower.Entries.Count, true));
+        await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, mockTerm, mockEntries.Length, true));
 
         await client.Received().ReceiveLeaderCommitResponse("a", true);
     }
@@ -231,12 +238,13 @@ public class ReplciationTests
     {
         var leader = Substitute.For<INode>();
         leader.Id.Returns(1);
-        leader.CommittedLogIndex.Returns(3);
+        int mockTerm = 0;
+        int mockCommittedLogIndex = 3;
         Node follower = new([leader]) { Id = 0 };
 
-        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, 0, 0, []));
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, mockTerm, mockCommittedLogIndex, 0, 0, []));
 
-        Assert.Equal(leader.CommittedLogIndex, follower.CommittedLogIndex);
+        Assert.Equal(mockCommittedLogIndex, follower.CommittedLogIndex);
     }
 
     [Fact]
@@ -264,6 +272,8 @@ public class ReplciationTests
     {
         var leader = Substitute.For<INode>();
         leader.Id.Returns(1);
+        int mockTerm = 0;
+        int mockCommittedLogIndex = 0;
         Node follower = new([leader])
         {
             Id = 0,
@@ -277,7 +287,7 @@ public class ReplciationTests
             new Entry(2, "d"),
         ];
 
-        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries));
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, mockTerm, mockCommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries));
 
         await leader.Received().RespondAppendEntries(Arg.Is<RespondEntriesDTO>(dto => dto.Response == false));
         Assert.Equal(2, follower.Entries.Count);
@@ -289,6 +299,8 @@ public class ReplciationTests
     {
         var leader = Substitute.For<INode>();
         leader.Id.Returns(1);
+        int mockTerm = 0;
+        int mockCommittedLogIndex = 0;
         Node follower = new([leader])
         {
             Id = 0,
@@ -302,7 +314,7 @@ public class ReplciationTests
             new Entry(2, "d"),
         ];
 
-        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries));
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, mockTerm, mockCommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries));
 
         await leader.Received().RespondAppendEntries(Arg.Is<RespondEntriesDTO>(dto => dto.Response == true));
         Assert.Equal(newEntries[0].Value, follower.Entries[2].Value);
@@ -315,7 +327,8 @@ public class ReplciationTests
     {
         var follower = Substitute.For<INode>();
         follower.Id.Returns(1);
-        follower.Entries.Returns([new Entry(0, "a")]);
+        int mockTerm = 0;
+        Entry[] mockEntries = [new Entry(0, "a")];
 
         var follower2 = Substitute.For<INode>();
         follower2.Id.Returns(2);
@@ -329,7 +342,7 @@ public class ReplciationTests
         leader.BecomeLeader();
         Assert.Equal(2, leader.NextIndexes[follower.Id]);
 
-        await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, follower.Term, follower.Entries.Count, false));
+        await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, mockTerm, mockEntries.Length, false));
         Assert.Equal(1, leader.NextIndexes[follower.Id]);
     }
 
@@ -340,6 +353,8 @@ public class ReplciationTests
         // ARRANGE
         var leader = Substitute.For<INode>();
         leader.Id.Returns(1);
+        int mockTerm = 0;
+        int mockCommittedLogIndex = 0;
 
         Node follower = new([leader])
         {
@@ -355,7 +370,7 @@ public class ReplciationTests
         int previousEntryTerm = 1; // Term is smaller than the inconsistent log
 
         // ACT
-        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, previousEntryIndex, previousEntryTerm, []));
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, mockTerm, mockCommittedLogIndex, previousEntryIndex, previousEntryTerm, []));
 
         // ASSERT
         await leader.Received().RespondAppendEntries(Arg.Is<RespondEntriesDTO>(dto => dto.Response == false));
@@ -368,7 +383,8 @@ public class ReplciationTests
     {
         var follower = Substitute.For<INode>();
         follower.Id.Returns(1);
-        follower.Entries.Returns([new Entry(0, "a")]);
+        int mockTerm = 0;
+        Entry[] mockEntries = [new Entry(0, "a")];
 
         var follower2 = Substitute.For<INode>();
         follower2.Id.Returns(2);
@@ -380,7 +396,7 @@ public class ReplciationTests
         };
 
         leader.BecomeLeader();
-        await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, follower.Term, follower.Entries.Count, false));
+        await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, mockTerm, mockEntries.Length, false));
 
         Assert.Equal(1, leader.NextIndexes[follower.Id]);
     }
@@ -432,7 +448,8 @@ public class ReplciationTests
 
         var follower = Substitute.For<INode>();
         follower.Id.Returns(1);
-        follower.Entries.Returns([new Entry(0, "a")]);
+        int mockTerm = 0;
+        Entry[] mockEntries = [new Entry(0, "a")];
 
         var follower2 = Substitute.For<INode>();
         follower2.Id.Returns(2);
@@ -441,7 +458,7 @@ public class ReplciationTests
 
         leader.BecomeLeader();
         await leader.ReceiveCommand(new ClientCommandDTO(client, "a"));
-        await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, follower.Term, follower.Entries.Count, false));
+        await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, mockTerm, mockEntries.Length, false));
 
         await client.Received(0).ReceiveLeaderCommitResponse(Arg.Any<string>(), Arg.Any<bool>());
     }
@@ -452,10 +469,12 @@ public class ReplciationTests
     {
         var leader = Substitute.For<INode>();
         leader.Id.Returns(1);
+        int mockTerm = 0;
+        int mockCommittedLogIndex = 0;
 
         Node follower = new([leader]) { Id = 0 };
 
-        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, leader.CommittedLogIndex, 10, 10, [new Entry(10, "a")]));
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, mockTerm, mockCommittedLogIndex, 10, 10, [new Entry(10, "a")]));
 
         await leader.Received().RespondAppendEntries(Arg.Is<RespondEntriesDTO>(dto => dto.Response == false));
     }
@@ -477,17 +496,18 @@ public class ReplciationTests
         };
 
         follower.Id.Returns(1);
-        follower.Entries.Returns([
+        Entry[] mockEntries = [
             new Entry(1, "a"),
             new Entry(10, "b"),
             new Entry(10, "c"),
-        ]);
+        ];
+        int mockTerm = 0;
 
         follower.RequestAppendEntries(Arg.Any<AppendEntriesDTO>())
             .Returns(
                 async x =>
                 {
-                    await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, follower.Term, follower.Entries.Count, false));
+                    await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, mockTerm, mockEntries.Length, false));
                     await follower.Received().RequestAppendEntries(Arg.Is<AppendEntriesDTO>(dto =>
                         dto.LeaderId == leader.Id &&
                         dto.LeaderTerm == leader.Term &&
@@ -499,7 +519,7 @@ public class ReplciationTests
                 },
                 async x =>
                 {
-                    await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, follower.Term, follower.Entries.Count, false));
+                    await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, mockTerm, mockEntries.Length, false));
                     await follower.Received().RequestAppendEntries(Arg.Is<AppendEntriesDTO>(dto =>
                         dto.LeaderId == leader.Id &&
                         dto.LeaderTerm == leader.Term &&
@@ -511,7 +531,7 @@ public class ReplciationTests
                 },
                 async x =>
                 {
-                    await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, follower.Term, follower.Entries.Count, true));
+                    await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, mockTerm, mockEntries.Length, true));
                     await follower.Received().RequestAppendEntries(Arg.Is<AppendEntriesDTO>(dto =>
                         dto.LeaderId == leader.Id &&
                         dto.LeaderTerm == leader.Term &&
@@ -562,9 +582,10 @@ public class ReplciationTests
     {
         var leader = Substitute.For<INode>();
         leader.Id.Returns(0);
+        int mockTerm = 0;
         Node follower = new([leader]) { Id = 1 };
 
-        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, 0, 0, 0, [new Entry(0, "a")]));
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, mockTerm, 0, 0, 0, [new Entry(0, "a")]));
 
         Assert.NotEmpty(follower.Entries);
     }
@@ -581,13 +602,15 @@ public class ReplciationTests
 
         var leader = Substitute.For<INode>();
         leader.Id.Returns(0);
+        int mockTerm = 0;
+
         Node follower = new([leader])
         {
             Id = 1,
             Entries = [entries[0], entries[1], entries[2]]
         };
 
-        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, leader.Term, 0, 0, 0, [entries[3]]));
+        await follower.RequestAppendEntries(new AppendEntriesDTO(leader.Id, mockTerm, 0, 0, 0, [entries[3]]));
 
         Assert.Equal(4, follower.Entries.Count);
     }
