@@ -353,8 +353,8 @@ public class SimTests
         await n1.RequestVoteRPC(new VoteRequestDTO(n2.Id, n2.Term));
         await n1.RequestVoteRPC(new VoteRequestDTO(n3.Id, n3.Term));
 
-        n2.Received().RespondVote(new VoteResponseDTO(true));
-        n3.Received().RespondVote(new VoteResponseDTO(false));
+        await n2.Received().RespondVote(new VoteResponseDTO(true));
+        await n3.Received().RespondVote(new VoteResponseDTO(false));
     }
 
     [Fact]
@@ -378,8 +378,8 @@ public class SimTests
         await n1.RequestVoteRPC(new VoteRequestDTO(n2.Id, n2.Term));
         await n1.RequestVoteRPC(new VoteRequestDTO(n3.Id, n3.Term));
 
-        n2.Received().RespondVote(new VoteResponseDTO(true));
-        n3.Received().RespondVote(new VoteResponseDTO(true));
+        await n2.Received().RespondVote(new VoteResponseDTO(true));
+        await n3.Received().RespondVote(new VoteResponseDTO(true));
     }
 
     [Fact]
