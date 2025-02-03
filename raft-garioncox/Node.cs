@@ -66,6 +66,8 @@ public class Node : INode
 
     public void CommitEntry()
     {
+        if (Entries.Count == 0) { return; }
+
         LogState = Entries[CommittedLogIndex].Value;
         CommittedLogIndex++;
 
