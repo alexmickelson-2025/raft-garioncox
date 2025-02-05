@@ -10,15 +10,63 @@
 
 <hr>
 
+<form @onsubmit="HandleSendCommand">
+    <div class="form-group pt-2">
+        <label for="nodeSelect">Node</label>
+        <select id="nodeSelect" class="form-select" @bind=SelectedNode>
+            <option value="0">Node 0</option>
+            <option value="1">Node 1</option>
+            <option value="2">Node 2</option>
+        </select>
+    </div>
+    <div class="form-group pt-2">
+        <label for="commandInput">Command</label>
+        <input id="commandInput" class="form-control" maxlength="10" @bind=Command>
+    </div>
+    <button type="submit" class="btn btn-primary mt-3">Send</button>
+</form>
+
+<hr>
+
+<div class="row p-3 col-12">
+    @foreach (var n in nodeData)
+    {
+        @if (n is null) { continue; }
+
+        var timeoutRemaining = n.ElectionTimeout;
+        var maxIntervalMilliseconds = n.State == NODESTATE.LEADER ? 50.0 * TimeoutMultiplier : 300.0 * TimeoutMultiplier;
+        var percentageRemaining = (int)(100 * (Math.Abs(n.ElectionTimeout) / maxIntervalMilliseconds));
+        <div class="col border p-3 m-2 rounded-3">
+            <div class="d-flex flex-column">
+                <div>@(n.State)</div>
+                <div>Term @n.Term</div>
+                <div>Following: @((n.CurrentTermLeader != null) ? n.CurrentTermLeader : "No leader")</div>
+            </div>
+            <div>
+                @n.ElectionTimeout ms
+                <div class="progress" role="progressbar" aria-label="Basic example"
+                    aria-valuenow="@(Math.Abs(timeoutRemaining))" aria-valuemin="0"
+                    aria-valuemax="@(maxIntervalMilliseconds)">
+                    <div class="progress-bar bg-@(n.State == NODESTATE.LEADER ? "danger" : "success")"
+                        style="width: @percentageRemaining%;"></div>
+                </div>
+            </div>
+
+            <div>State: @n.LogState</div>
+            <div>Commit Index: @n.CommittedLogIndex</div>
+        </div>
+    }
+</div>
 
 @code {
-    int TimeoutMultiplier = 10;
+    int TimeoutMultiplier = 50;
     int NetworkDelay = 0;
     public required Timer timer;
     public string Command = "";
     public string SelectedNode { get; set; } = "0";
+    public SimClient simClient = new(0);
     HttpClient httpClient = new HttpClient();
-    NodeDataDTO[] nodeData = [];
+    NodeDataDTO?[] nodeData = [];
     string[] Urls = [];
     protected override void OnInitialized()
     {
@@ -47,10 +95,11 @@
         }, null, 0, 200);
     }
 
-    @* public void HandleSendCommand()
+    public void HandleSendCommand()
     {
         int nodeId = int.Parse(SelectedNode);
         simClient.AddCommand(Command);
-        nodes[nodeId].ReceiveCommand(new ClientCommandDTO(simClient, Command));
-    } *@
+        string url = Urls[nodeId];
+        httpClient.PostAsync(url,new ClientCommandDTO(simClient, Command));
+    }
 }
