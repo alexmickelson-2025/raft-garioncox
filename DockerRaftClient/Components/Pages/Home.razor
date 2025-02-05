@@ -1,22 +1,56 @@
 ﻿@page "/"
 @rendermode InteractiveServer
+@using raft_garioncox
+@using raft_garioncox.Records
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>RAFT Sim</h1>
+<p>Garion Cox</p>
 
-Welcome to your new app.
+<hr>
+
 
 @code {
+    int TimeoutMultiplier = 10;
+    int NetworkDelay = 0;
+    public required Timer timer;
+    public string Command = "";
+    public string SelectedNode { get; set; } = "0";
     HttpClient httpClient = new HttpClient();
-    string[] Urls = Environment.GetEnvironmentVariable("NODE_URLS").Split(',');
-
+    NodeDataDTO[] nodeData = [];
+    string[] Urls = [];
     protected override void OnInitialized()
     {
+        Urls = Environment.GetEnvironmentVariable("NODE_URLS")
+        .Split(";")
+        .Select(s => s.Split(",")[1])
+        .ToArray();
+
+        nodeData = new NodeDataDTO[Urls.Length];
+
         foreach (string url in Urls)
         {
             Console.WriteLine(url);
         }
+
+        StateHasChanged();
+
+        timer = new(async _ =>
+        {
+            for (int i = 0; i < Urls.Length; i++)
+            {
+                var response = await httpClient.GetAsync(Urls[i] + "/nodeData");
+                nodeData[i] = await response.Content.ReadFromJsonAsync<NodeDataDTO>();
+            }
+            await InvokeAsync(StateHasChanged);
+        }, null, 0, 200);
     }
 
+    @* public void HandleSendCommand()
+    {
+        int nodeId = int.Parse(SelectedNode);
+        simClient.AddCommand(Command);
+        nodes[nodeId].ReceiveCommand(new ClientCommandDTO(simClient, Command));
+    } *@
 }

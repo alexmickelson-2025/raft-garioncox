@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\raft-garioncox\raft-garioncox.csproj" />
+    <ProjectReference Include="..\WebApp\WebApp.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
