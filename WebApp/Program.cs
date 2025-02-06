@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
 using raft_garioncox;
@@ -68,32 +69,33 @@ app.MapGet("/nodeData", () =>
     );
 });
 
-app.MapPost("/request/appendEntries", async (AppendEntriesDTO request) =>
+app.MapPost("/request/appendEntries", async ([FromBody] AppendEntriesDTO request) =>
 {
     logger.LogInformation("received append entries request {request}", request);
     await node.RequestAppendEntries(request);
 });
 
-app.MapPost("/request/vote", async (VoteRequestDTO request) =>
+app.MapPost("/request/vote", async ([FromBody] VoteRequestDTO request) =>
 {
     logger.LogInformation("received vote request {request}", request);
     await node.RequestVoteRPC(request);
 });
 
-app.MapPost("/response/appendEntries", async (RespondEntriesDTO response) =>
+app.MapPost("/response/appendEntries", async ([FromBody] RespondEntriesDTO response) =>
 {
     logger.LogInformation("received append entries response {response}", response);
     await node.RespondAppendEntries(response);
 });
 
-app.MapPost("/response/vote", (VoteResponseDTO response) =>
+app.MapPost("/response/vote", ([FromBody] VoteResponseDTO response) =>
 {
     logger.LogInformation("received vote response {response}", response);
     node.RespondVote(response);
 });
 
-app.MapPost("/request/command", (ClientCommandDTO data) =>
+app.MapPost("/request/command", ([FromBody] ClientCommandDTO data) =>
 {
+    logger.LogInformation("Receive command {command}", data.command);
     node.ReceiveCommand(data);
 });
 

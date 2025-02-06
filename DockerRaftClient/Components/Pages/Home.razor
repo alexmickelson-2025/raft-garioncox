@@ -1,5 +1,6 @@
 ﻿@page "/"
 @rendermode InteractiveServer
+@using System.Text.Json
 @using raft_garioncox
 @using raft_garioncox.Records
 
@@ -100,6 +101,8 @@
         int nodeId = int.Parse(SelectedNode);
         simClient.AddCommand(Command);
         string url = Urls[nodeId];
-        httpClient.PostAsJsonAsync(url + "/request/command", new ClientCommandDTO(Command));
+        ClientCommandDTO dto = new ClientCommandDTO(Command);
+        Console.WriteLine(JsonSerializer.Serialize(dto));
+        httpClient.PostAsJsonAsync(url + "/request/command", dto);
     }
 }

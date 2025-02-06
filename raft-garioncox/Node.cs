@@ -1,4 +1,5 @@
-﻿using raft_garioncox.Records;
+﻿using System.Text.Json;
+using raft_garioncox.Records;
 
 namespace raft_garioncox;
 
@@ -105,7 +106,15 @@ public class Node : INode
             catch
             { }
 
-            await node.RequestAppendEntries(new AppendEntriesDTO(Id, Term, CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries));
+            AppendEntriesDTO dto = new(Id, Term, CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries);
+            Console.WriteLine(JsonSerializer.Serialize(dto));
+            Console.WriteLine(JsonSerializer.Serialize(dto));
+            Console.WriteLine(JsonSerializer.Serialize(dto));
+            Console.WriteLine(JsonSerializer.Serialize(dto));
+            Console.WriteLine(JsonSerializer.Serialize(dto));
+            Console.WriteLine(JsonSerializer.Serialize(dto));
+
+            await node.RequestAppendEntries(dto);
         }).ToArray();
 
         return Task.CompletedTask;
@@ -113,7 +122,7 @@ public class Node : INode
 
     public Task ReceiveCommand(ClientCommandDTO dto)
     {
-        Entry e = new(Term, dto.Command);
+        Entry e = new(Term, dto.command);
         Entries.Add(e);
         return Task.CompletedTask;
     }
