@@ -15,12 +15,12 @@ public class Node : INode
     public int IntervalScalar { get; set; } = 1;
     public string LogState { get; private set; } = "";
     private int Majority => (int)Math.Ceiling((Neighbors.Keys.Count + 1.0) / 2);
-    public Dictionary<(int, string), IClient> ClientCommands { get; set; } = [];
     public Dictionary<int, INode> Neighbors { get; set; } = [];
     public Dictionary<int, int> NextIndexes { get; set; } = [];
     public Dictionary<int, bool> NeighborCommitVote { get; set; } = [];
     public int Term { get; set; } = 0;
     private readonly object TimeoutLock = new();
+    private readonly object EntriesLock = new();
     public int TimeoutRate { get; set; } = 10;
     private object VoteCountLock = new();
     private int VoteCount = 0;
@@ -75,8 +75,6 @@ public class Node : INode
         {
             NeighborCommitVote[key] = false;
         }
-
-        ClientCommands[(CommittedLogIndex, LogState)].ReceiveLeaderCommitResponse(LogState, true);
     }
 
     public Task Heartbeat()
@@ -117,7 +115,6 @@ public class Node : INode
     {
         Entry e = new(Term, dto.Command);
         Entries.Add(e);
-        ClientCommands[(Entries.Count, dto.Command)] = dto.Client;
         return Task.CompletedTask;
     }
 
@@ -244,7 +241,10 @@ public class Node : INode
 
     public async Task RespondAppendEntries(RespondEntriesDTO dto)
     {
-        NeighborCommitVote[dto.FollowerId] = dto.Response;
+        lock (EntriesLock)
+        {
+            NeighborCommitVote[dto.FollowerId] = dto.Response;
+        }
         if (!dto.Response)
         {
             NextIndexes[dto.FollowerId] = NextIndexes[dto.FollowerId] - 1;

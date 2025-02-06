@@ -185,6 +185,6 @@
     {
         int nodeId = int.Parse(SelectedNode);
         simClient.AddCommand(Command);
-        nodes[nodeId].ReceiveCommand(new ClientCommandDTO(simClient, Command));
+        nodes[nodeId].ReceiveCommand(new ClientCommandDTO(Command));
     }
 }

@@ -1,2 +1,2 @@
 namespace raft_garioncox.Records;
-public record ClientCommandDTO(IClient Client, string Command);
+public record ClientCommandDTO(string Command);

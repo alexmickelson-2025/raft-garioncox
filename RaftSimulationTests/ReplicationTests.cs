@@ -16,9 +16,6 @@ public class ReplciationTests
     public void WhenLeaderReceivesClientCommand_LeaderSendsLogInNextAppendRPC_ToAllNodes()
     {
         // ARRANGE
-        var client = Substitute.For<IClient>();
-        client.Id.Returns(0);
-
         var follower = Substitute.For<INode>();
         follower.Id.Returns(1);
 
@@ -34,7 +31,7 @@ public class ReplciationTests
         string command = DateTime.MaxValue.ToString();
 
         // ACT
-        leader.ReceiveCommand(new ClientCommandDTO(client, command));
+        leader.ReceiveCommand(new ClientCommandDTO(command));
         leader.Heartbeat();
 
         // ASSERT
@@ -45,13 +42,10 @@ public class ReplciationTests
     // Test 2
     public void WhenLeaderReceivesCommandFromClient_ItAppendsEntryToLog()
     {
-        var client = Substitute.For<IClient>();
-        client.Id.Returns(0);
-
         string command = DateTime.MaxValue.ToString();
         Node leader = new();
 
-        leader.ReceiveCommand(new ClientCommandDTO(client, command));
+        leader.ReceiveCommand(new ClientCommandDTO(command));
 
         Assert.NotEmpty(leader.Entries);
         Entry e = leader.Entries.First();
@@ -121,9 +115,6 @@ public class ReplciationTests
     // Test 8
     public async Task WhenLeaderReceivesMajorityResponsesForLog_ItCommitsIt()
     {
-        var mockClient = Substitute.For<IClient>();
-        mockClient.Id.Returns(0);
-
         var mockfollower = Substitute.For<INode>();
         mockfollower.Id.Returns(1);
         int mockTerm = 0;
@@ -134,7 +125,7 @@ public class ReplciationTests
 
         Node leader = new([mockfollower, mockNode2]) { Id = 0 };
 
-        await leader.ReceiveCommand(new ClientCommandDTO(mockClient, "a"));
+        await leader.ReceiveCommand(new ClientCommandDTO("a"));
 
         await leader.RespondAppendEntries(new RespondEntriesDTO(mockfollower.Id, mockTerm, mockLogIndex, true));
 
@@ -145,12 +136,9 @@ public class ReplciationTests
     // Test 9
     public void LeaderCommitsLogs_ByIncrementingCommittedLogIndex()
     {
-        var mockClient = Substitute.For<IClient>();
-        mockClient.Id.Returns(0);
-
         Node leader = new() { Id = 0 };
 
-        leader.ReceiveCommand(new ClientCommandDTO(mockClient, "a"));
+        leader.ReceiveCommand(new ClientCommandDTO("a"));
         leader.CommitEntry();
 
         Assert.Equal(1, leader.CommittedLogIndex);
@@ -197,9 +185,6 @@ public class ReplciationTests
     // Test 12
     public async Task WhenLeaderReceivesMajorityResponseForAppendEntries_ItSendsConfirmationToClient()
     {
-        var client = Substitute.For<IClient>();
-        client.Id.Returns(0);
-
         var follower = Substitute.For<INode>();
         follower.Id.Returns(1);
         Entry[] mockEntries = new Entry[1];
@@ -210,23 +195,18 @@ public class ReplciationTests
 
         Node leader = new([follower, follower2]) { Id = 0 };
 
-        await leader.ReceiveCommand(new ClientCommandDTO(client, "a"));
+        await leader.ReceiveCommand(new ClientCommandDTO("a"));
         await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, mockTerm, mockEntries.Length, true));
-
-        await client.Received().ReceiveLeaderCommitResponse("a", true);
     }
 
     [Fact]
     // Test 13
     public void WhenLeaderCommitsLog_ItAppliesItToItsStateMachine()
     {
-        var mockClient = Substitute.For<IClient>();
-        mockClient.Id.Returns(0);
-
         string entry = "a";
         Node leader = new();
 
-        leader.ReceiveCommand(new ClientCommandDTO(mockClient, entry));
+        leader.ReceiveCommand(new ClientCommandDTO(entry));
         leader.CommitEntry();
 
         Assert.Equal(entry, leader.LogState);
@@ -443,9 +423,6 @@ public class ReplciationTests
     // Test 18
     public async Task IfLeaderCannotCommitAnEntry_ItDoesNotSendResponseToClient()
     {
-        var client = Substitute.For<IClient>();
-        client.Id.Returns(0);
-
         var follower = Substitute.For<INode>();
         follower.Id.Returns(1);
         int mockTerm = 0;
@@ -457,10 +434,8 @@ public class ReplciationTests
         Node leader = new([follower, follower2]) { Id = 0 };
 
         leader.BecomeLeader();
-        await leader.ReceiveCommand(new ClientCommandDTO(client, "a"));
+        await leader.ReceiveCommand(new ClientCommandDTO("a"));
         await leader.RespondAppendEntries(new RespondEntriesDTO(follower.Id, mockTerm, mockEntries.Length, false));
-
-        await client.Received(0).ReceiveLeaderCommitResponse(Arg.Any<string>(), Arg.Any<bool>());
     }
 
     [Fact]
@@ -552,8 +527,6 @@ public class ReplciationTests
     [Fact]
     public async Task GivenLeaderHasNewLogs_OnNextHeartbeat_ItSendsThem()
     {
-        var client = Substitute.For<IClient>();
-        client.Id.Returns(0);
         var follower = Substitute.For<INode>();
         follower.Id.Returns(1);
         Node leader = new([follower])
@@ -564,7 +537,7 @@ public class ReplciationTests
             NextIndexes = new Dictionary<int, int>() { { follower.Id, 3 } }
         };
 
-        await leader.ReceiveCommand(new ClientCommandDTO(client, "d"));
+        await leader.ReceiveCommand(new ClientCommandDTO("d"));
         Assert.Equal(4, leader.Entries.Count);
 
         await leader.Heartbeat();

@@ -100,6 +100,6 @@
         int nodeId = int.Parse(SelectedNode);
         simClient.AddCommand(Command);
         string url = Urls[nodeId];
-        httpClient.PostAsync(url,new ClientCommandDTO(simClient, Command));
+        httpClient.PostAsJsonAsync(url + "/request/command", new ClientCommandDTO(Command));
     }
 }
