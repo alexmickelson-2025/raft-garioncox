@@ -9,4 +9,4 @@ WORKDIR /app
  
 COPY . /app
  
-CMD dotnet run --project RaftRestApi
+CMD dotnet run --project WebApp

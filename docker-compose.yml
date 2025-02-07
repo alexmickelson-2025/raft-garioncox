@@ -45,7 +45,7 @@ services:
   client:
     build:
       context: .
-      dockerfile: dev-slow.Dockerfile
+      dockerfile: dev-slow-client.Dockerfile
     environment:
       - NODE_URLS=1,http://node1:8080;2,http://node2:8080;3,http://node3:8080
     healthcheck:
