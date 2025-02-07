@@ -66,7 +66,8 @@ app.MapGet("/nodeData", () =>
         node.CommittedLogIndex,
         node.State,
         node.IntervalScalar,
-        node.Entries
+        node.Entries,
+        node.IsPaused
     );
 
     return data;
@@ -75,6 +76,7 @@ app.MapGet("/nodeData", () =>
 app.MapPost("/request/appendEntries", async ([FromBody] AppendEntriesDTO request) =>
 {
     logger.LogInformation("received append entries request {request}", request);
+    logger.LogInformation("Log is currently {}", node.IsPaused ? "Paused" : "Running");
     await node.RequestAppendEntries(request);
 });
 
@@ -100,6 +102,18 @@ app.MapPost("/request/command", ([FromBody] ClientCommandDTO data) =>
 {
     logger.LogInformation("Receive command {command}", data.command);
     node.ReceiveCommand(data);
+});
+
+app.MapGet("/request/pause", () =>
+{
+    logger.LogInformation("Receive pause command for {id}", node.Id);
+    node.Pause();
+});
+
+app.MapGet("/request/unpause", () =>
+{
+    logger.LogInformation("Receive unpause command for {id}", node.Id);
+    node.Unpause();
 });
 
 app.Run();

@@ -13,8 +13,9 @@ public record NodeDataDTO
       public NODESTATE State { get; init; }
       public int IntervalScalar { get; init; }
       public List<Entry> Entries { get; init; }
+      public bool IsPaused { get; init; }
 
-      public NodeDataDTO(int id, string logState, int electionTimeout, int term, int? currentTermLeader, int committedLogIndex, NODESTATE state, int intervalScalar, List<Entry> entries)
+      public NodeDataDTO(int id, string logState, int electionTimeout, int term, int? currentTermLeader, int committedLogIndex, NODESTATE state, int intervalScalar, List<Entry> entries, bool isPaused)
       {
             Id = id;
             LogState = logState;
@@ -25,5 +26,6 @@ public record NodeDataDTO
             State = state;
             IntervalScalar = intervalScalar;
             Entries = entries;
+            IsPaused = isPaused;
       }
 }

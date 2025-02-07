@@ -38,6 +38,17 @@
         var maxIntervalMilliseconds = n.State == NODESTATE.LEADER ? 50.0 * TimeoutMultiplier : 300.0 * TimeoutMultiplier;
         var percentageRemaining = (int)(100 * (Math.Abs(n.ElectionTimeout) / maxIntervalMilliseconds));
         <div class="col border p-3 m-2 rounded-3">
+            <div class="d-flex flex-row">
+                <h2>Node @n.Id</h2>
+                @if (n.IsPaused)
+                {
+                    <button class="btn btn-outline-success ms-auto" @onclick="() => Unpause(n.Id)">Resume</button>
+                }
+                else
+                {
+                    <button class="btn btn-outline-danger ms-auto" @onclick="() => Pause(n.Id)">pause</button>
+                }
+            </div>
             <div class="d-flex flex-column">
                 <div>@(n.State)</div>
                 <div>Term @n.Term</div>
@@ -48,7 +59,7 @@
                 <div class="progress" role="progressbar" aria-label="Basic example"
                     aria-valuenow="@(Math.Abs(timeoutRemaining))" aria-valuemin="0"
                     aria-valuemax="@(maxIntervalMilliseconds)">
-                    <div class="progress-bar bg-@(n.State == NODESTATE.LEADER ? "danger" : "success")"
+                    <div class="progress-bar bg-@(n.State == NODESTATE.LEADER ? "danger" : n.State == NODESTATE.CANDIDATE ? "primary" : "success")"
                         style="width: @percentageRemaining%;"></div>
                 </div>
             </div>
@@ -105,5 +116,17 @@
         string url = Urls[nodeId];
         ClientCommandDTO dto = new ClientCommandDTO(Command);
         httpClient.PostAsJsonAsync(url + "/request/command", dto);
+    }
+
+    public void Pause(int nodeId)
+    {
+        string url = Urls[nodeId - 1];
+        httpClient.GetAsync(url + "/request/pause");
+    }
+
+    public void Unpause(int nodeId)
+    {
+        string url = Urls[nodeId - 1];
+        httpClient.GetAsync(url + "/request/unpause");
     }
 }
