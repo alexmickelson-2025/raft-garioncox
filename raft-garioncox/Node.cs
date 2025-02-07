@@ -229,6 +229,10 @@ public class Node : INode
         State = NODESTATE.FOLLOWER;
         CurrentLeader = dto.LeaderId;
         CommittedLogIndex = dto.CommittedLogIndex;
+        if (CommittedLogIndex > 0)
+        {
+            LogState = Entries[CommittedLogIndex - 1].Value;
+        }
         Term = dto.LeaderTerm;
 
         ResetElectionTimeout();
