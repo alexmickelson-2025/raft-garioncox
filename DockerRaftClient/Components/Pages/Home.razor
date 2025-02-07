@@ -55,6 +55,7 @@
 
             <div>State: @n.LogState</div>
             <div>Commit Index: @n.CommittedLogIndex</div>
+            Entries: @n.Entries.Count
         </div>
     }
 </div>
@@ -90,7 +91,8 @@
             for (int i = 0; i < Urls.Length; i++)
             {
                 var response = await httpClient.GetAsync(Urls[i] + "/nodeData");
-                nodeData[i] = await response.Content.ReadFromJsonAsync<NodeDataDTO>();
+                var data = await response.Content.ReadFromJsonAsync<NodeDataDTO>();
+                nodeData[i] = data;
             }
             await InvokeAsync(StateHasChanged);
         }, null, 0, 200);
@@ -102,7 +104,6 @@
         simClient.AddCommand(Command);
         string url = Urls[nodeId];
         ClientCommandDTO dto = new ClientCommandDTO(Command);
-        Console.WriteLine(JsonSerializer.Serialize(dto));
         httpClient.PostAsJsonAsync(url + "/request/command", dto);
     }
 }

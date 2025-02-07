@@ -57,16 +57,19 @@ app.MapGet("/health", () => "healthy");
 
 app.MapGet("/nodeData", () =>
 {
-    return new NodeDataDTO(
-      Id: node.Id,
-      LogState: node.LogState,
-      ElectionTimeout: node.ElectionTimeout,
-      Term: node.Term,
-      CurrentTermLeader: node.CurrentLeader,
-      CommittedLogIndex: node.CommittedLogIndex,
-      State: node.State,
-      IntervalScalar: node.IntervalScalar
+    NodeDataDTO data = new(
+        node.Id,
+        node.LogState,
+        node.ElectionTimeout,
+        node.Term,
+        node.CurrentLeader,
+        node.CommittedLogIndex,
+        node.State,
+        node.IntervalScalar,
+        node.Entries
     );
+
+    return data;
 });
 
 app.MapPost("/request/appendEntries", async ([FromBody] AppendEntriesDTO request) =>

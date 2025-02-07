@@ -107,13 +107,6 @@ public class Node : INode
             { }
 
             AppendEntriesDTO dto = new(Id, Term, CommittedLogIndex, previousEntryIndex, previousEntryTerm, newEntries);
-            Console.WriteLine(JsonSerializer.Serialize(dto));
-            Console.WriteLine(JsonSerializer.Serialize(dto));
-            Console.WriteLine(JsonSerializer.Serialize(dto));
-            Console.WriteLine(JsonSerializer.Serialize(dto));
-            Console.WriteLine(JsonSerializer.Serialize(dto));
-            Console.WriteLine(JsonSerializer.Serialize(dto));
-
             await node.RequestAppendEntries(dto);
         }).ToArray();
 
@@ -275,6 +268,12 @@ public class Node : INode
         if (tally >= Majority)
         {
             CommitEntry();
+            tally = 0;
+
+            foreach (int key in NeighborCommitVote.Keys)
+            {
+                NeighborCommitVote[key] = false;
+            }
         }
     }
 
