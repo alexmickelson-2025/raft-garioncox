@@ -49,7 +49,7 @@ services:
     environment:
       - NODE_URLS=1,http://node1:8080;2,http://node2:8080;3,http://node3:8080
     ports:
-      - 5000:8080
+      - 8127:8080
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s
