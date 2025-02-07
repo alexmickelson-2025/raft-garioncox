@@ -2,7 +2,7 @@ services:
   node1:
     build:
       context: .
-      dockerfile: dev.Dockerfile
+      dockerfile: dev-slow.Dockerfile
     working_dir: /app
     user: 1000:100
     volumes:
@@ -40,7 +40,7 @@ services:
   node3:
     build:
       context: .
-      dockerfile: dev.Dockerfile
+      dockerfile: dev-slow.Dockerfile
     working_dir: /app
     user: 1000:100
     volumes:
@@ -60,7 +60,7 @@ services:
   client:
     build:
       context: .
-      dockerfile: dev.Dockerfile
+      dockerfile: dev-slow.Dockerfile
     working_dir: /app
     user: 1000:100
     ports:
